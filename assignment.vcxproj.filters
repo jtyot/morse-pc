@@ -1,0 +1,120 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <Filter Include="Source Files">
+      <UniqueIdentifier>{CC3CE37F-712A-4559-A698-F2BB0FD4818D}</UniqueIdentifier>
+      <Extensions>cpp;c;cc;cxx;def;odl;idl;hpj;bat;asm;asmx</Extensions>
+    </Filter>
+    <Filter Include="shaders">
+      <UniqueIdentifier>{885353c2-5b28-4c84-a193-58c8a95f07a7}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="src\base\App.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\base\Renderer.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\base\Framebuffer.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\base\Mesh.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\base\Light.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\base\BvhNode.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\base\RayTracer.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\base\Shader.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\base\ImageProcessor.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="src\base\App.hpp">
+      <Filter>Source Files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\base\utility.hpp">
+      <Filter>Source Files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\base\BvhNode.hpp">
+      <Filter>Source Files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\base\Framebuffer.hpp">
+      <Filter>Source Files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\base\Light.hpp">
+      <Filter>Source Files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\base\Mesh.hpp">
+      <Filter>Source Files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\base\RayTracer.hpp">
+      <Filter>Source Files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\base\Renderer.hpp">
+      <Filter>Source Files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\base\Shader.hpp">
+      <Filter>Source Files</Filter>
+    </ClInclude>
+    <ClInclude Include="gputracer.hpp">
+      <Filter>Source Files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\base\ImageProcessor.hpp">
+      <Filter>Source Files</Filter>
+    </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="shaders\accumulate.frag">
+      <Filter>shaders</Filter>
+    </None>
+    <None Include="shaders\accumulate.vert">
+      <Filter>shaders</Filter>
+    </None>
+    <None Include="shaders\dot.frag">
+      <Filter>shaders</Filter>
+    </None>
+    <None Include="shaders\dot.vert">
+      <Filter>shaders</Filter>
+    </None>
+    <None Include="shaders\model.frag">
+      <Filter>shaders</Filter>
+    </None>
+    <None Include="shaders\model.vert">
+      <Filter>shaders</Filter>
+    </None>
+    <None Include="shaders\particle.frag">
+      <Filter>shaders</Filter>
+    </None>
+    <None Include="shaders\particle.vert">
+      <Filter>shaders</Filter>
+    </None>
+    <None Include="shaders\postprocess.frag">
+      <Filter>shaders</Filter>
+    </None>
+    <None Include="shaders\postprocess.vert">
+      <Filter>shaders</Filter>
+    </None>
+    <None Include="shaders\shadow.frag">
+      <Filter>shaders</Filter>
+    </None>
+    <None Include="shaders\shadow.vert">
+      <Filter>shaders</Filter>
+    </None>
+    <None Include="src\base\rtIntersect.inl">
+      <Filter>Source Files</Filter>
+    </None>
+    <None Include="src\base\gputracer.cu">
+      <Filter>Source Files</Filter>
+    </None>
+  </ItemGroup>
+</Project>
