@@ -138,6 +138,7 @@ namespace FW
 
 		GLContext::checkErrors();
 		glEnable(GL_DEPTH_TEST);
+		GLContext::checkErrors();
 	}
 
 	void Renderer::initRendering(glGeneratedIndices& gl, Window& window, CameraControls& cam) {
@@ -416,7 +417,7 @@ namespace FW
 			int i = 0;
 			for (auto& l : lights)
 			{
-				if (shading_mode || i == (frameID % 30))
+				if (shading_mode)// || i == (frameID % 30))
 					lightpoints.push_back(l.position);
 				i++;
 			}
@@ -489,13 +490,24 @@ namespace FW
 			imageProcessor.processImage(image_data, size);
 			GLContext::checkErrors();
 		}
+		GLContext::checkErrors(); 
+		/*std::vector<Vec3f> sumImageData;
+		int i = 0;
+		for (auto& f : imageProcessor.sumImage)
+		{
+			int y = i / (lastsize.x / imageProcessor.downscalefactor_slider);
+			int x = i % (lastsize.x / imageProcessor.downscalefactor_slider);
+			sumImageData.push_back(Vec3f(x / 100.0f, f * .01f, y / 100.0f));
+			i++;
+		}
+		renderVector(sumImageData, GL_POINTS, world_to_clip);*/
 
 		GLContext::checkErrors();
-		if (imageProcessor.blit_texture_back && std::chrono::duration_cast<std::chrono::milliseconds>(timer.now() - lastswap).count() > 260)
+		/*if (imageProcessor.blit_texture_back && std::chrono::duration_cast<std::chrono::milliseconds>(timer.now() - lastswap).count() > 260)
 		{
 			shading_mode = !shading_mode;
 			lastswap = timer.now();
-		}
+		}*/
 		//--------------------------------------------	POSTPROCESS
 		//glDrawBuffer(GL_COLOR_ATTACHMENT0);
 		shader["postprocess"].use();
@@ -519,6 +531,8 @@ namespace FW
 			glBindTexture(GL_TEXTURE_2D, framebuffer["accumulate"].textures["color"].ID);
 		else
 			glBindTexture(GL_TEXTURE_2D, envimap.getGLTexture());
+		//glTexImage2D(GL_TEXTURE_2D, 0, GL_R32F, lastsize.x / imageProcessor.downscalefactor_slider / 2, lastsize.y / 2 / imageProcessor.downscalefactor_slider, 0, GL_RED, GL_FLOAT, imageProcessor.sumImage.data());
+		
 		shader["postprocess"].sendUniform("tex", 0);
 		shader["postprocess"].sendUniform("flip_y", Vec2f(1.0f, process_png ? -1.0f : 1.0f));
 

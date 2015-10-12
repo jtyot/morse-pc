@@ -150,13 +150,6 @@ steps_per_update_(5)
 	renderer.current_transformation_.setIdentity();
 	renderer.mesh.push_back(Mesh());
 	renderer.mesh.push_back(Mesh());
-	renderer.mesh[1].load("");
-	renderer.mesh[1].materialMap[""].diffuseTexture = Texture::import("sponza_curtain_blue_diff.png");
-	renderer.mesh[1].materialMap[""].hasDiffuseTexture = true;
-	renderer.mesh[1].materialMap[""].specularTexture = Texture::import("sponza_curtain_blue_diff.png");
-	renderer.mesh[1].materialMap[""].hasSpecularTexture = true;
-	renderer.mesh[1].materialMap[""].normalTexture = Texture::import("normalsponza_curtain_blue_diff.png");
-	renderer.mesh[1].materialMap[""].hasNormalTexture = true;
 
 
 	common_ctrl_.showFPS(true);
@@ -177,15 +170,14 @@ steps_per_update_(5)
 	common_ctrl_.beginSliderStack();
 	common_ctrl_.addSlider((S32*)&renderer.samples_per_draw, 1, 100, false, FW_KEY_NONE, FW_KEY_NONE, "Render samples: %d");
 	common_ctrl_.addSlider((S32*)&renderer.imageProcessor.downscalefactor_slider, 1, 60, false, FW_KEY_NONE, FW_KEY_NONE, "Downscale factor: %d");
-	common_ctrl_.addSlider((S32*)&renderer.imageProcessor.pointsearch_max, 3, 20, false, FW_KEY_NONE, FW_KEY_NONE, "point search outer size: %d");
-	common_ctrl_.addSlider((S32*)&renderer.imageProcessor.pointsearch_min, 1, 15, false, FW_KEY_NONE, FW_KEY_NONE, "point search inner size: %d");
+	common_ctrl_.addSlider((S32*)&renderer.imageProcessor.pointsearch_max, 1, 15, false, FW_KEY_NONE, FW_KEY_NONE, "point search count: %d");
+	common_ctrl_.addSlider((S32*)&renderer.imageProcessor.pointsearch_min, 1, 15, false, FW_KEY_NONE, FW_KEY_NONE, "point search scale: %d");
 	common_ctrl_.endSliderStack();
 
 
 	common_ctrl_.beginSliderStack();
-	common_ctrl_.addSlider((F32*)&renderer.imageProcessor.pointsearch_threshold, .0001f, 1.3f, true, FW_KEY_NONE, FW_KEY_NONE, "point search local max threshold: %.4f");
-	common_ctrl_.addSlider((F32*)&renderer.imageProcessor.lightsearch_threshold, .001f, 1.3f, true, FW_KEY_NONE, FW_KEY_NONE, "light search local max threshold: %.4f");
-	common_ctrl_.addSlider((S32*)&renderer.imageProcessor.smoothing_kernel_size, 1, 15, false, FW_KEY_NONE, FW_KEY_NONE, "preprocess smoothing size: %d");
+	//common_ctrl_.addSlider((F32*)&renderer.imageProcessor.pointsearch_threshold, .0001f, 1.3f, true, FW_KEY_NONE, FW_KEY_NONE, "point search local max threshold: %.4f");
+	common_ctrl_.addSlider((F32*)&renderer.imageProcessor.lightsearch_threshold, .01f, 10.f, true, FW_KEY_NONE, FW_KEY_NONE, "light search local max threshold: %.4f");
 	common_ctrl_.addSlider((F32*)&renderer.imageProcessor.light_min_distance, .0f, .3f, false, FW_KEY_NONE, FW_KEY_NONE, "lightpoint min distance: %.4f");
 	common_ctrl_.endSliderStack();
 
@@ -202,9 +194,9 @@ steps_per_update_(5)
 	window_.setSize(Vec2i(1600, 900));
 
 	//renderer.envimap = Texture::import("assets/a.png");
-	Vec2i asd = renderer.envimap.getImage()->getSize();
+	//Vec2i asd = renderer.envimap.getImage()->getSize();
 	//Vec4f asd = envimap.getImage()->getVec4f(Vec2i(100, 100));
-	cout << asd.x << ", " << asd.y << endl;
+	//cout << asd.x << ", " << asd.y << endl;
 }
 
 bool App::handleEvent(const Window::Event& ev) {

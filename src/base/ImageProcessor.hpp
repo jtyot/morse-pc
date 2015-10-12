@@ -11,9 +11,13 @@ namespace FW
 	struct blinker //class that describes a detected light, whether it's a sender we're following or just a streetlight
 	{
 		Vec2f pos; //position of light on screen
+		int size;
+		float brightness;
+		float mass = 1;
+		bool isDead = false;
 		std::chrono::high_resolution_clock::time_point lastseen; //time point when we last saw this light
 
-		blinker(const Vec2f pos, const std::chrono::high_resolution_clock& timer) : pos(pos), lastseen(timer.now()) {}
+		blinker(const Vec2f pos, const std::chrono::high_resolution_clock& timer, int size, float brightness) : pos(pos), lastseen(timer.now()), size(size), brightness(brightness) {}
 
 		long long time(const std::chrono::high_resolution_clock& timer) const //get time elapsed since last sighting, in milliseconds
 		{
@@ -23,7 +27,7 @@ namespace FW
 		bool dead(const std::chrono::high_resolution_clock& timer) const //is it too long since we last saw this?
 		{
 			auto dur = time(timer);
-			return dur > 5000; //dead if not seen in last 5 seconds
+			return dur > 2000; //dead if not seen in last .1 seconds
 		}
 
 		bool on(const std::chrono::high_resolution_clock& timer) const //was this seen just recently?
@@ -42,17 +46,20 @@ namespace FW
 			return getCurPos(t);
 		}
 
-		void updatePos(const Vec2f new_pos, const std::chrono::high_resolution_clock& timer)
+		void updatePos(const Vec2f new_pos, const std::chrono::high_resolution_clock& timer, int new_size, float new_brightness)
 		{
-			pos = new_pos;
+			brightness = new_brightness;
+			size = new_size;
+			pos = (new_pos + pos * mass) / (mass+1.0f);
+			mass++;
 			lastseen = timer.now();
 		}
 
-		bool tryUpdate(const Vec2f new_pos, const std::chrono::high_resolution_clock& timer)
+		bool tryUpdate(const Vec2f new_pos, const std::chrono::high_resolution_clock& timer, int new_size, float new_brightness)
 		{
 			if ((new_pos - getCurPos(timer)).length() < .15f)
 			{
-				updatePos(new_pos, timer);
+				updatePos(new_pos, timer, new_size, new_brightness);
 				return true;
 			}
 			return false;
@@ -77,9 +84,10 @@ namespace FW
 		int					pointsearch_min = 2;
 		int					pointsearch_max = 5;
 
-		float				lightsearch_threshold = .01f;
+		float				lightsearch_threshold = .1f;
 		float				pointsearch_threshold = .1f;
 		float				light_min_distance = .15f;
+		std::vector<float>  sumImage;
 
 		ImageProcessor(Renderer* renderer) : renderer(renderer){}
 		~ImageProcessor(void){}
