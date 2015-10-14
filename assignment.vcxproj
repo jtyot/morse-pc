@@ -282,6 +282,8 @@
     <None Include="shaders\accumulate.vert" />
     <None Include="shaders\dot.frag" />
     <None Include="shaders\dot.vert" />
+    <None Include="shaders\dot_color.frag" />
+    <None Include="shaders\dot_color.vert" />
     <None Include="shaders\model.frag" />
     <None Include="shaders\model.vert" />
     <None Include="shaders\particle.frag" />

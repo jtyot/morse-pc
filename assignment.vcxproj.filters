@@ -116,5 +116,11 @@
     <None Include="src\base\gputracer.cu">
       <Filter>Source Files</Filter>
     </None>
+    <None Include="shaders\dot_color.frag">
+      <Filter>shaders</Filter>
+    </None>
+    <None Include="shaders\dot_color.vert">
+      <Filter>shaders</Filter>
+    </None>
   </ItemGroup>
 </Project>

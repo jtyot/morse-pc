@@ -1,6 +1,7 @@
 #pragma once
 
 #include <base/Math.hpp>
+#include <base/Random.hpp>
 #include <vector>
 #include <chrono>
 
@@ -11,13 +12,15 @@ namespace FW
 	struct blinker //class that describes a detected light, whether it's a sender we're following or just a streetlight
 	{
 		Vec2f pos; //position of light on screen
+		static int blinkerID;
 		int size;
+		int ID;
 		float brightness;
 		float mass = 1;
 		bool isDead = false;
 		std::chrono::high_resolution_clock::time_point lastseen; //time point when we last saw this light
 
-		blinker(const Vec2f pos, const std::chrono::high_resolution_clock& timer, int size, float brightness) : pos(pos), lastseen(timer.now()), size(size), brightness(brightness) {}
+		blinker(const Vec2f pos, const std::chrono::high_resolution_clock& timer, int size, float brightness) : pos(pos), lastseen(timer.now()), size(size), brightness(brightness), ID(blinkerID++) {}
 
 		long long time(const std::chrono::high_resolution_clock& timer) const //get time elapsed since last sighting, in milliseconds
 		{
@@ -70,6 +73,8 @@ namespace FW
 	{
 
 	public:
+		std::vector<Vec3f> blinkerColors;
+		Random				rnd;
 		void				processImage(const std::vector<Vec4f>& imageData, const Vec2i& size);
 		int					expandPixel(int i, float threshold, std::vector<float>& histogram, std::vector<bool>& visited, int orig_i, int maxdist);
 
@@ -89,7 +94,11 @@ namespace FW
 		float				light_min_distance = .15f;
 		std::vector<float>  sumImage;
 
-		ImageProcessor(Renderer* renderer) : renderer(renderer){}
+		ImageProcessor(Renderer* renderer) : renderer(renderer){ 
+			rnd = Random(1234); 
+			for (int i = 0; i < 90; ++i)
+				blinkerColors.push_back(rnd.getVec3f(0, 1));
+		}
 		~ImageProcessor(void){}
 		
 	private:

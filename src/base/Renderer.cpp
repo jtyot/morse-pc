@@ -120,6 +120,29 @@ namespace FW
 		templight.copy(L);
 	}
 
+	void Renderer::renderVectorColored(std::vector<Vec3f>& vec, GLenum mode, Mat4f world_to_clip)
+	{
+		glDisable(GL_DEPTH_TEST);
+		GLContext::checkErrors();
+
+		shader["dot_color"].use();
+		glPointSize(8.0f);
+
+		glBindBuffer(GL_ARRAY_BUFFER, pointVBO);
+		glBufferData(GL_ARRAY_BUFFER, vec.size() * sizeof(Vec3f), vec.data(), GL_DYNAMIC_DRAW);
+		glEnableVertexAttribArray(0);
+		glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(Vec3f) * 2, (GLvoid*)0);
+		glEnableVertexAttribArray(1);
+		glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, sizeof(Vec3f) * 2, (GLvoid*)sizeof(Vec3f));
+
+		shader["dot_color"].sendUniform("worldToClip", world_to_clip);
+		glDrawArrays(mode, 0, vec.size() / 2);
+
+		GLContext::checkErrors();
+		glEnable(GL_DEPTH_TEST);
+		GLContext::checkErrors();
+	}
+
 	void Renderer::renderVector(std::vector<Vec3f>& vec, GLenum mode, Mat4f world_to_clip)
 	{
 		glDisable(GL_DEPTH_TEST);
@@ -173,6 +196,7 @@ namespace FW
 		framebuffer["accumulate"].addtexturetarget("weight", GL_COLOR_ATTACHMENT1, GL_R32F);
 
 		shader["dot"] = Shader("dot", ctx);
+		shader["dot_color"] = Shader("dot_color", ctx);
 		shader["shadow"] = Shader("shadow", ctx, true);
 		shader["model"] = Shader("model", ctx);
 		shader["postprocess"] = Shader("postprocess", ctx);

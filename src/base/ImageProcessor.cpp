@@ -4,10 +4,14 @@
 using namespace FW;
 using namespace std;
 
+int blinker::blinkerID = 0;
+
+
 bool inBounds(Vec2i pos, Vec2i size)
 {
 	return !(pos.x < 0 || pos.x >= size.x || pos.y < 0 || pos.y >= size.y);
 }
+
 
 void ImageProcessor::processImage(const std::vector<Vec4f>& imageData, const Vec2i& size_in)
 {
@@ -225,7 +229,10 @@ void ImageProcessor::processImage(const std::vector<Vec4f>& imageData, const Vec
 
 			//if we detected previously unknown blinker, add it
 			if (!found)
+			{
 				blinkers.push_back(blinker(pos, timer, sumSizes[max_idx], max_diff));
+				blinkers[blinkers.size() - 1].ID = blinker::blinkerID++;
+			}
 			else if (found)
 			{
 				//else, update the position of found blinker
@@ -234,7 +241,8 @@ void ImageProcessor::processImage(const std::vector<Vec4f>& imageData, const Vec
 		}
 	}
 
-
+	renderer->renderVector(histoPoints, GL_LINES, Mat4f());
+	histoPoints.clear();
 	//eliminate dead blinkers
 	vector<blinker> new_blinkers;
 	for (int i = 0; i < blinkers.size(); ++i)
@@ -266,26 +274,36 @@ void ImageProcessor::processImage(const std::vector<Vec4f>& imageData, const Vec
 
 
 		histoPoints.push_back(Vec3f(Vec2f(x - radius, y + radius) / Vec2f(size) * 2.0f - 1.0f, 0));
+		histoPoints.push_back(blinkerColors[p.ID % blinkerColors.size()]);
 		histoPoints.push_back(Vec3f(Vec2f(x + radius, y + radius) / Vec2f(size) * 2.0f - 1.0f, 0));
+		histoPoints.push_back(blinkerColors[p.ID % blinkerColors.size()]);
 
 		histoPoints.push_back(Vec3f(Vec2f(x + radius, y + radius) / Vec2f(size) * 2.0f - 1.0f, 0));
+		histoPoints.push_back(blinkerColors[p.ID % blinkerColors.size()]);
 		histoPoints.push_back(Vec3f(Vec2f(x + radius, y - radius) / Vec2f(size) * 2.0f - 1.0f, 0));
+		histoPoints.push_back(blinkerColors[p.ID % blinkerColors.size()]);
 
 		histoPoints.push_back(Vec3f(Vec2f(x + radius, y - radius) / Vec2f(size) * 2.0f - 1.0f, 0));
+		histoPoints.push_back(blinkerColors[p.ID % blinkerColors.size()]);
 		histoPoints.push_back(Vec3f(Vec2f(x - radius, y - radius) / Vec2f(size) * 2.0f - 1.0f, 0));
+		histoPoints.push_back(blinkerColors[p.ID % blinkerColors.size()]);
 
 		histoPoints.push_back(Vec3f(Vec2f(x - radius, y - radius) / Vec2f(size) * 2.0f - 1.0f, 0));
+		histoPoints.push_back(blinkerColors[p.ID % blinkerColors.size()]);
 		histoPoints.push_back(Vec3f(Vec2f(x - radius, y + radius) / Vec2f(size) * 2.0f - 1.0f, 0));
+		histoPoints.push_back(blinkerColors[p.ID % blinkerColors.size()]);
 
 		//draw anticipated movement
 		float dt = 30.0f;
 		for (float t = 0; t < 500.0f; t += dt)
 		{
 			histoPoints.push_back(Vec3f(Vec2f(x, y) / Vec2f(size) * 2.0f - 1.0f + p.getCurPos(t + p.time(timer)) - p.pos, 0));
+			histoPoints.push_back(blinkerColors[p.ID % blinkerColors.size()]);
 			float t2 = t + dt;
 			histoPoints.push_back(Vec3f(Vec2f(x, y) / Vec2f(size) * 2.0f - 1.0f + p.getCurPos(t2 + p.time(timer)) - p.pos, 0));
+			histoPoints.push_back(blinkerColors[p.ID % blinkerColors.size()]);
 		}
 	}
 
-	renderer->renderVector(histoPoints, GL_LINES, Mat4f());
+	renderer->renderVectorColored(histoPoints, GL_LINES, Mat4f());
 }

@@ -93,6 +93,7 @@ namespace FW
 
 		void				sampleLightTri();
 		void				renderVector(std::vector<Vec3f>& vec, GLenum mode, Mat4f world_to_clip);
+		void				renderVectorColored(std::vector<Vec3f>& vec, GLenum mode, Mat4f world_to_clip);
 
 
 	private:
