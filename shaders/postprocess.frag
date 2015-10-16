@@ -4,9 +4,12 @@ smooth in vec2 uv_in;
 uniform sampler2D tex;
 uniform sampler2D weight;
 uniform float time;
+uniform int greyscale;
+uniform int use_weight;
 uniform vec2 flip_y;
 uniform vec2 screen;
 uniform vec2 projectionoffset;
+uniform float shadowCutOff;
 out vec4 fColor;
 
 vec3 tonemap(vec3 col, float toneMapWhite)
@@ -26,18 +29,17 @@ void main()
 		fColor = vec4(.0, .0, .0, 1.0);
 	else
 	{
-		float len = length(texture(tex, uv).rgb);
-		if(len > .0)
-		{
-			if(flip_y.y > .0)
-				fColor = vec4(texture(tex, uv).rgb / texture(weight, uv).r, 1.0);
-			else
-				fColor = vec4(texture(tex, uv).rgb, 1.0);
-		}
-		else
-			fColor.rgb = vec3(.0);
+		fColor = vec4(texture(tex, uv).rgb, 1.0);
 
-		fColor.rgb = tonemap(fColor.rgb, 100.0);
+		if(greyscale == 1)
+			fColor.rgb = fColor.bbb;
+
+		if(use_weight == 1)
+		{
+			fColor.rgb = max(vec3(.0f), fColor.rgb - vec3(shadowCutOff)) / (1.0f - shadowCutOff);
+
+			fColor.rgb = tonemap(fColor.rgb, 100.0);
+		}
 		fColor.a = 1.0;
 	}
 }

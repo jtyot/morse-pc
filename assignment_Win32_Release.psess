@@ -36,7 +36,7 @@
   </PostinstrumentEvent>
   <Binaries>
     <ProjBinary>
-      <Path>bin\assignment_Win32_Release.exe</Path>
+      <Path>bin\assignment_x64_Release.exe</Path>
       <ArgumentTimestamp>01/01/0001 00:00:00</ArgumentTimestamp>
       <Instrument>true</Instrument>
       <Sample>true</Sample>
@@ -48,7 +48,7 @@
       <LaunchProject>true</LaunchProject>
       <OverrideProjectSettings>false</OverrideProjectSettings>
       <LaunchMethod>Executable</LaunchMethod>
-      <ExecutablePath>bin\assignment_Win32_Release.exe</ExecutablePath>
+      <ExecutablePath>bin\assignment_x64_Release.exe</ExecutablePath>
       <StartupDirectory>.\</StartupDirectory>
       <Arguments>
       </Arguments>
@@ -70,6 +70,12 @@
   <Reports>
     <Report>
       <Path>assignment_Win32_Release151012.vsp</Path>
+    </Report>
+    <Report>
+      <Path>assignment_x64_Release151015.vsp</Path>
+    </Report>
+    <Report>
+      <Path>assignment_x64_Release151015(1).vsp</Path>
     </Report>
   </Reports>
   <Launches>

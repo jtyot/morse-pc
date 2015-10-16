@@ -39,23 +39,23 @@ void ImageProcessor::processImage(const std::vector<Vec4f>& imageData, const Vec
 	//compute histogram from image rows, loop over all pixels and sum it to the proper vector
 	float invsizex = 1.0f / lastsize.x;
 	float invsizey = 1.0f / lastsize.y;
+	float shadowWeight = 1.0f / (1.0f - shadowCutOff);
 	for (int j = 0; j < lastsize.y; j++)
 	{
 		for (int i = 0; i < lastsize.x; i++)
 		{
-			auto value = imageData[j * lastsize.x + i].z; //read only blue channel
+			auto orig_value = imageData[j * lastsize.x + i].getXYZ();
+			auto value = dot(orig_value, Vec3f(.333f)); //greyscale for histogram
+			value = max(.0f, value - shadowCutOff) * shadowWeight;
 			int x = i / downscalefactor;
 			int y = j / downscalefactor;
 			histoX[x] += value;
 			histoY[y] += value;
 
-			//sumImage[j / downscalefactor * size.x + i / downscalefactor] += value;
+			value = orig_value.z; //clamped blue channel for light search
+			value = max(.0f, value - shadowCutOff) * shadowWeight;
+
 			float cur_sum = value;
-			/*if ((j%downscalefactor) != 0 || (i%downscalefactor) != 0)
-			{
-				sumImage[y * size.x + x] = cur_sum;
-				continue;
-			}*/
 			if (inBounds(Vec2i(x - 1, y), size))
 				cur_sum += sumImage[y * size.x + (x - 1)];
 			if (inBounds(Vec2i(x, y - 1), size))
@@ -69,19 +69,41 @@ void ImageProcessor::processImage(const std::vector<Vec4f>& imageData, const Vec
 
 	for (int i = 0; i < size.x; ++i)
 	{
-		histoX[i] *= invsizex;
+		float w = 1.0f - abs(i - size.x / 2.0f) / (size.x / 2.0f);
+		histoX[i] *= invsizex * w;
 		maxvalue.x = max(histoX[i], maxvalue.x);
 	}
 
 	for (int i = 0; i < size.y; ++i)
 	{
-		histoY[i] *= invsizey;
+		float w = 1.0f - abs(i - size.y / 2.0f) / (size.y / 2.0f);
+		histoY[i] *= invsizey * w;
 		maxvalue.y = max(histoY[i], maxvalue.y);
 	}
 
 	std::vector<float>* histograms[2];
 	histograms[0] = &histoX;
 	histograms[1] = &histoY;
+
+	//render histograms
+	std::vector<Vec3f> histoPoints;
+	histoPoints.reserve(size.x * 2 + size.y * 2);
+
+	if (show_histograms)
+	{
+		for (int axis = 0; axis < 2; axis++){
+			for (int i = 1; i < size[axis]; ++i)
+			{
+				Vec3f pos1, pos2;
+				pos1[axis] = (*histograms[axis])[i - 1] / maxvalue[axis] *.2f - .95f;
+				pos2[axis] = (*histograms[axis])[i] / maxvalue[axis] * .2f - .95f;
+				pos1[(axis + 1) % 2] = float(i - 1.0f) / size[axis] * 2.0f - 1.0f;
+				pos2[(axis + 1) % 2] = float(i) / size[axis] * 2.0f - 1.0f;
+				histoPoints.push_back(pos1);
+				histoPoints.push_back(pos2);
+			}
+		}
+	}
 
 	std::vector<float>* prevHistograms[2];
 	prevHistograms[0] = &prevHistoX;
@@ -117,9 +139,9 @@ void ImageProcessor::processImage(const std::vector<Vec4f>& imageData, const Vec
 
 					auto cur = (*histograms[axis])[x];
 					auto prev = (*prevHistograms[axis])[i];
-					auto weight = 1.0f - abs(float(offset)) / size[axis] * maxdiffscale + .5f;
-					curError += pow((cur - prev), 2.0f) * weight;
-					count += weight;
+					float diff = cur - prev;
+					curError += diff * diff;
+					count ++;
 					(*prevHistograms[axis])[i] = (*histograms[axis])[x];
 				}
 
@@ -127,7 +149,8 @@ void ImageProcessor::processImage(const std::vector<Vec4f>& imageData, const Vec
 					continue;
 
 				curError /= count;
-				curError += pow(float(abs(offset - lastoffset[axis])) / size[axis] * maxdiffscale, 2.0f) * .14f;
+				float moveCost = float(abs(offset - lastoffset[axis])) / downscalefactor / 100.0f;
+				curError += moveCost * moveCost * 0.0009f;
 				if (curError < minError[axis])
 				{
 					minError[axis] = curError;
@@ -140,8 +163,6 @@ void ImageProcessor::processImage(const std::vector<Vec4f>& imageData, const Vec
 	auto offset = -1.0f * Vec2f(minOffset) / Vec2f(size);
 	renderer->projectionoffset = offset;
 
-	std::vector<Vec3f> histoPoints;
-	histoPoints.reserve(size.x * 2 + size.y * 2);
 
 	int sum_count = pointsearch_max;
 	int sum_scale = pointsearch_min;
@@ -151,7 +172,8 @@ void ImageProcessor::processImage(const std::vector<Vec4f>& imageData, const Vec
 	for (auto& l : sumSizes)
 		l = sum_scale * pow(2.0f, k++);
 
-	//blinkers.clear();
+	for (auto& p : blinkers)
+		p.isDead = true;
 	//loop over all pixels to find lights
 	for (int i = 0; i < size.x; ++i)
 	{
@@ -215,9 +237,9 @@ void ImageProcessor::processImage(const std::vector<Vec4f>& imageData, const Vec
 			bool anyInRange = false;
 			int bestIdx = 0;
 			int k = 0;
-			float mincost = light_min_distance * sumSizes[max_idx];
+			float mincost = light_min_distance;
 			for (auto& p : blinkers){
-				auto cost = (pos - p.getCurPos(timer)).length();
+				auto cost = (pos - p.getCurPos(timer)).length() / (p.size + sumSizes[max_idx]);
 				if (cost < mincost)
 				{
 					found = true;
@@ -236,10 +258,34 @@ void ImageProcessor::processImage(const std::vector<Vec4f>& imageData, const Vec
 			else if (found)
 			{
 				//else, update the position of found blinker
-				blinkers[bestIdx].updatePos(pos, timer, sumSizes[max_idx], max_diff);
+				blinkers[bestIdx].mergePos(pos, sumSizes[max_idx], max_diff);
 			}
 		}
 	}
+
+	for (auto& p : blinkers)
+	{
+		for (auto& q : blinkers)
+		{
+			if (p == q || p.isDead || q.isDead)
+				continue;
+			if ((p.pos - q.pos).length() < (q.size + p.size) * light_min_distance * .5f)
+			{
+				auto& smaller = p;
+				auto& larger = q;
+				if (p.ID < q.ID)
+				{
+					std::swap(p, q);
+				}
+
+				smaller.remove = true;
+				larger.mergePos(smaller.pos, smaller.size, smaller.brightness, smaller.mass);
+			}
+		}
+	}
+
+	for (auto& p : blinkers)
+		p.update(timer);
 
 	renderer->renderVector(histoPoints, GL_LINES, Mat4f());
 	histoPoints.clear();
@@ -248,11 +294,11 @@ void ImageProcessor::processImage(const std::vector<Vec4f>& imageData, const Vec
 	for (int i = 0; i < blinkers.size(); ++i)
 	{
 		auto& p = blinkers[i];
-		p.mass = 1;
-		if (!p.dead(timer))
+		p.mass = 0;
+		if (!p.dead(timer) && !p.remove)
 			new_blinkers.push_back(p);
 	}
-	blinkers = new_blinkers;
+	blinkers = move(new_blinkers);
 
 	//render blinkers as squares
 	//histoPoints.clear();
@@ -261,7 +307,7 @@ void ImageProcessor::processImage(const std::vector<Vec4f>& imageData, const Vec
 		auto pos = p.getCurPos(timer);
 
 		float radius = p.size;// / downscalefactor;
-		if (!p.on(timer))
+		if (p.isDead)
 		{
 			if (show_unseenblinkers)
 				radius *= .5f;
@@ -294,15 +340,15 @@ void ImageProcessor::processImage(const std::vector<Vec4f>& imageData, const Vec
 		histoPoints.push_back(blinkerColors[p.ID % blinkerColors.size()]);
 
 		//draw anticipated movement
-		float dt = 30.0f;
-		for (float t = 0; t < 500.0f; t += dt)
-		{
-			histoPoints.push_back(Vec3f(Vec2f(x, y) / Vec2f(size) * 2.0f - 1.0f + p.getCurPos(t + p.time(timer)) - p.pos, 0));
-			histoPoints.push_back(blinkerColors[p.ID % blinkerColors.size()]);
-			float t2 = t + dt;
-			histoPoints.push_back(Vec3f(Vec2f(x, y) / Vec2f(size) * 2.0f - 1.0f + p.getCurPos(t2 + p.time(timer)) - p.pos, 0));
-			histoPoints.push_back(blinkerColors[p.ID % blinkerColors.size()]);
-		}
+		//float dt = 30.0f;
+		//for (float t = 0; t < 500.0f; t += dt)
+		//{
+		//	histoPoints.push_back(Vec3f(Vec2f(x, y) / Vec2f(size) * 2.0f - 1.0f + p.getCurPos(t + p.time(timer)) - p.pos, 0));
+		//	histoPoints.push_back(blinkerColors[p.ID % blinkerColors.size()]);
+		//	float t2 = t + dt;
+		//	histoPoints.push_back(Vec3f(Vec2f(x, y) / Vec2f(size) * 2.0f - 1.0f + p.getCurPos(t2 + p.time(timer)) - p.pos, 0));
+		//	histoPoints.push_back(blinkerColors[p.ID % blinkerColors.size()]);
+		//}
 	}
 
 	renderer->renderVectorColored(histoPoints, GL_LINES, Mat4f());

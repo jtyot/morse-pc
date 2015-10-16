@@ -54,6 +54,8 @@ private:
 						App(const App&);		// forbid copy
 	App&				operator=(const App&);	// forbid assignment
 
+	void				postProcessImage();
+
 	Window				window_;
 	CommonControls		common_ctrl_;
 	CameraControls		cameraCtrl;
@@ -66,7 +68,9 @@ private:
 	bool				mousedown = false;
 	bool				mousepressed = false;
 	bool				firstrender = true;
-	bool				ctrldown = false;
+	bool				moviemode = false;
+	int					current_sequence_frame = 0;
+	FW::String				image_sequence_name = "";
 
 	bool				enable_collisions = true;
 	bool				enable_particle_vectors = false;

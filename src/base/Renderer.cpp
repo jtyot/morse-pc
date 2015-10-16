@@ -505,12 +505,37 @@ namespace FW
 			imageProcessor.processImage(texData, lastsize);
 		else
 		{
-			glBindFramebuffer(GL_FRAMEBUFFER, 0);
-			glEnable(GL_BLEND);
-			glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-			auto size = envimap.getSize();
-			glViewport(0, 0, lastsize.x * 2, lastsize.y * 2);
+			//glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+			glDisable(GL_BLEND);
+			shader["postprocess"].use();
+			glViewport(0, 0, lastsize.x, lastsize.y);
+
+			glActiveTexture(GL_TEXTURE0);
+			glBindTexture(GL_TEXTURE_2D, envimap.getGLTexture());
+
+			shader["postprocess"].sendUniform("tex", 0);
+			shader["postprocess"].sendUniform("flip_y", Vec2f(1.0f, -1.0f));
+			shader["postprocess"].sendUniform("shadowCutOff", .0f);
+			shader["postprocess"].sendUniform("greyscale", 0);
+
+			shader["postprocess"].sendUniform("use_weight", 0);
+			shader["postprocess"].sendUniform("screen", window.getSize());
+			shader["postprocess"].sendUniform("projectionoffset", Vec2f());
+
+			glBindBuffer(GL_ARRAY_BUFFER, fullscreenVBO_uv);
+			glEnableVertexAttribArray(0);
+			glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, sizeof(float) * 2, (GLvoid*)0);
+
+			glDrawArrays(GL_TRIANGLES, 0, 2 * 3);
 			GLContext::checkErrors();
+
+
+			//glBindFramebuffer(GL_FRAMEBUFFER, 0);
+			glEnable(GL_BLEND);
+			//glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+			auto size = envimap.getSize();
+			GLContext::checkErrors();
+			glViewport(0, 0, lastsize.x, lastsize.y);
 			imageProcessor.processImage(image_data, size);
 			GLContext::checkErrors();
 		}
@@ -538,7 +563,7 @@ namespace FW
 
 		glViewport(0, 0, lastsize.x * 2, lastsize.y * 2);
 		glBindFramebuffer(GL_FRAMEBUFFER, 0);
-		if (!process_png)
+		//if (!process_png)
 		{
 			glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 		}
@@ -551,20 +576,21 @@ namespace FW
 
 		glActiveTexture(GL_TEXTURE0);
 		//glBindTexture(GL_TEXTURE_2D, framebuffer["shadow"].textures["depth"].ID);
-		if (!process_png)
-			glBindTexture(GL_TEXTURE_2D, framebuffer["accumulate"].textures["color"].ID);
-		else
-			glBindTexture(GL_TEXTURE_2D, envimap.getGLTexture());
+		glBindTexture(GL_TEXTURE_2D, framebuffer["accumulate"].textures["color"].ID);
 		//glTexImage2D(GL_TEXTURE_2D, 0, GL_R32F, lastsize.x / imageProcessor.downscalefactor_slider / 2, lastsize.y / 2 / imageProcessor.downscalefactor_slider, 0, GL_RED, GL_FLOAT, imageProcessor.sumImage.data());
 		
 		shader["postprocess"].sendUniform("tex", 0);
-		shader["postprocess"].sendUniform("flip_y", Vec2f(1.0f, process_png ? -1.0f : 1.0f));
+		shader["postprocess"].sendUniform("flip_y", Vec2f(1.0f, 1.0f));
+		shader["postprocess"].sendUniform("shadowCutOff", show_postprocessing ? imageProcessor.shadowCutOff : .0f);
+		shader["postprocess"].sendUniform("greyscale", render_greyscale && show_postprocessing ? 1 : 0);
 
 		glActiveTexture(GL_TEXTURE1);
 		glBindTexture(GL_TEXTURE_2D, framebuffer["accumulate"].textures["weight"].ID);
 		shader["postprocess"].sendUniform("weight", 1);
+		shader["postprocess"].sendUniform("use_weight", 1);
 		shader["postprocess"].sendUniform("screen", window.getSize());
-		shader["postprocess"].sendUniform("projectionoffset", projectionoffset);
+		shader["postprocess"].sendUniform("projectionoffset", show_postprocessing ? projectionoffset : Vec2f(.0f));
+		cout << projectionoffset.x << ", " << projectionoffset.y << endl;
 		glEnable(GL_FRAMEBUFFER_SRGB);
 		glDrawArrays(GL_TRIANGLES, 0, 2 * 3);
 		glDisable(GL_FRAMEBUFFER_SRGB);

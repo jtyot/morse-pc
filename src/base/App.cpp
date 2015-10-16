@@ -145,7 +145,6 @@ shading_mode_changed_(false),
 step_(0.0001f),
 steps_per_update_(5)
 {
-	//static_assert(is_standard_layout<Vertex>::value, "struct Vertex must be standard layout to use offsetof");
 	renderer.initRendering(gl_, window_, cameraCtrl);
 	renderer.current_transformation_.setIdentity();
 	renderer.mesh.push_back(Mesh());
@@ -154,11 +153,14 @@ steps_per_update_(5)
 
 	common_ctrl_.showFPS(true);
 	common_ctrl_.addButton(&model_changed_, FW_KEY_M, "Load scene (M)");
+	common_ctrl_.addToggle(&moviemode, FW_KEY_P, "Toggle image sequence playback (P)");
 	common_ctrl_.addSeparator();
 	common_ctrl_.addToggle(&renderer.shading_mode, FW_KEY_T, "Toggle shading mode (T)", &shading_mode_changed_);
-	common_ctrl_.addToggle(&renderer.imageProcessor.blit_texture_back, FW_KEY_NONE, "Toggle point blinking (Y)");
+	common_ctrl_.addToggle(&renderer.imageProcessor.blit_texture_back, FW_KEY_Y, "Toggle point blinking (Y)");
+	common_ctrl_.addToggle(&renderer.render_greyscale, FW_KEY_B, "Toggle render only blue channel (B)");
+	common_ctrl_.addToggle(&renderer.show_postprocessing, FW_KEY_NONE, "Toggle postprocessing visibility");
 	common_ctrl_.addSeparator();
-	common_ctrl_.addToggle(&renderer.imageProcessor.stabilize_image, FW_KEY_NONE, "Toggle image stabilization");
+	common_ctrl_.addToggle(&renderer.imageProcessor.stabilize_image, FW_KEY_U, "Toggle image stabilization (U)");
 	common_ctrl_.addToggle(&renderer.imageProcessor.show_histograms, FW_KEY_NONE, "Toggle histogram display");
 	common_ctrl_.addToggle(&renderer.imageProcessor.show_searchpoints, FW_KEY_NONE, "Toggle search point display");
 	common_ctrl_.addToggle(&renderer.imageProcessor.show_unseenblinkers, FW_KEY_NONE, "Toggle unseen blinker visibility");
@@ -176,9 +178,9 @@ steps_per_update_(5)
 
 
 	common_ctrl_.beginSliderStack();
-	//common_ctrl_.addSlider((F32*)&renderer.imageProcessor.pointsearch_threshold, .0001f, 1.3f, true, FW_KEY_NONE, FW_KEY_NONE, "point search local max threshold: %.4f");
+	common_ctrl_.addSlider((F32*)&renderer.imageProcessor.shadowCutOff, .0f, .99f, false, FW_KEY_NONE, FW_KEY_NONE, "light search shadow cutoff threshold: %.4f");
 	common_ctrl_.addSlider((F32*)&renderer.imageProcessor.lightsearch_threshold, .01f, 10.f, true, FW_KEY_NONE, FW_KEY_NONE, "light search local max threshold: %.4f");
-	common_ctrl_.addSlider((F32*)&renderer.imageProcessor.light_min_distance, .0f, .3f, false, FW_KEY_NONE, FW_KEY_NONE, "lightpoint min distance: %.4f");
+	common_ctrl_.addSlider((F32*)&renderer.imageProcessor.light_min_distance, .0f, .1f, false, FW_KEY_NONE, FW_KEY_NONE, "lightpoint min distance: %.4f");
 	common_ctrl_.endSliderStack();
 
 	window_.addListener(&cameraCtrl);
@@ -192,11 +194,22 @@ steps_per_update_(5)
 	window_.addListener(&common_ctrl_);
 
 	window_.setSize(Vec2i(1600, 900));
+}
 
-	//renderer.envimap = Texture::import("assets/a.png");
-	//Vec2i asd = renderer.envimap.getImage()->getSize();
-	//Vec4f asd = envimap.getImage()->getVec4f(Vec2i(100, 100));
-	//cout << asd.x << ", " << asd.y << endl;
+void App::postProcessImage()
+{
+	auto size = renderer.envimap.getSize();
+	auto img = renderer.envimap.getImage();
+	renderer.image_data.resize(size.x * size.y * sizeof(Vec4f));
+	for (int x = 0; x < size.x; ++x)
+	{
+		for (int y = 0; y < size.y; ++y)
+		{
+			auto vec = img->getVec4f(Vec2i(x, y));
+			vec.w = 1.0f;
+			renderer.image_data[y * size.x + x] = vec;
+		}
+	}
 }
 
 bool App::handleEvent(const Window::Event& ev) {
@@ -222,22 +235,14 @@ bool App::handleEvent(const Window::Event& ev) {
 		{
 			renderer.envimap = Texture::import(filename);
 			renderer.process_png = true;
-			auto size = renderer.envimap.getSize();
-			auto img = renderer.envimap.getImage();
-			renderer.image_data.resize(size.x * size.y * sizeof(Vec4f));
-			for (int x = 0; x < size.x; ++x)
+			if (filename.endsWith("0000.png"))
 			{
-				for (int y = 0; y < size.y; ++y)
-				{
-					auto vec = img->getVec4f(Vec2i(x, y));
-					//for (int i = 0; i < 4; ++i)
-					//	vec[i] = pow(vec[i], 1.0f / 2.2f);
-					/*for (int i = 0; i < 4; ++i)
-						vec[i] = pow(vec[i], 4.2f) * 5.0f;*/
-					vec.w = 1.0f;
-					renderer.image_data[y * size.x + x] = vec;
-				}
+				image_sequence_name = filename.substring(0, filename.getLength() - FW::String("0000.png").getLength());
+				cout << "image sequence name: " << image_sequence_name.getPtr() << "****.png" << endl;
+				moviemode = true;
+				current_sequence_frame = 0;
 			}
+			postProcessImage();
 		}
 		
 		// Load the vertex buffer to GPU.
@@ -274,16 +279,6 @@ bool App::handleEvent(const Window::Event& ev) {
 			Vec3f start = cameraCtrl.getPosition();
 			Vec3f dir = (cameraCtrl.getCameraToWorld() * Vec4f(mousepos * ang * Vec2f(screen.x / screen.y, 1.0f), -1.0f, .0f)).getXYZ();
 
-			/*RaycastResult r1 = renderer.rt.raycast(start, dir * 99.0f);
-			RaycastResult r2 = renderer.cloth_rt.raycast(start, dir * 99.0f);
-			if (r2.t < r1.t)
-				r1 = r2;*/
-			/*RaycastResult r1 = castRay(start, start + dir, renderer.mesh, renderer.rt);
-			if (r1.t < 1)
-			{
-				renderer.focal_dist = (r1.point - start).length();
-				renderer.hitposition = r1.point;
-			}*/
 		}
 		if (ev.key == FW_KEY_SPACE)
 		{
@@ -323,11 +318,6 @@ bool App::handleEvent(const Window::Event& ev) {
 	if (ev.type == Window::EventType_Paint)
 	{
 
-		/*if (framecount > shutter_duration)
-		{
-		renderer.clear_screen = true;
-		framecount = 0;
-		}*/
 		if (enable_animation)
 		{
 			common_ctrl_.m_screenshot = true;
@@ -338,69 +328,56 @@ bool App::handleEvent(const Window::Event& ev) {
 			common_ctrl_.screenshotname_animation = false;
 		}
 		renderer.clear_screen = true;
+		renderer.moviemode = moviemode;
 		renderer.motionblur_shutter_time = shutter_duration;
 		for (int j = 0; j < shutter_duration; j++)
 		{
 			float t = rnd.getF32(-1,1);
-			//renderer.model_rotation = rot_velocity * t;
-			
-			/*Mat3f rot = Mat3f::rotation(rot_axis, rot_velocity * t);
-			renderer.current_transformation_.setCol(0, Vec4f(rot.getCol(0), .0f));
-			renderer.current_transformation_.setCol(1, Vec4f(rot.getCol(1), .0f));
-			renderer.current_transformation_.setCol(2, Vec4f(rot.getCol(2), .0f));*/
 			renderer.model_rotation = rot_velocity;
 			renderer.model_velocity = model_velocity;
 			renderer.render(gl_, window_, cameraCtrl, j + 1 == shutter_duration, shutter_duration, step_ * steps_per_update_);
 			if (!renderer.renderer_accumulate_indefinitely)
 			for (int i = 0; i < steps_per_update_; ++i) 
 			{
-				/*ps_->wind_randomness = wind_randomness;
-				ps2_->wind_randomness = wind_randomness;
-				ps_->wind_strength = wind_strength;
-				ps2_->wind_strength = wind_strength;
-				switch (integrator_) {
-				case EULER_INTEGRATOR:
-					integrator::eulerStep(*ps_, *ps_, step_, enable_collisions, &renderer.rt, &renderer.cloth_rt, enable_particle_collision_vectors, enable_particle_vectors, true);
-					if (ps_type_ == SPRINKLER_AND_CLOTH)
-						integrator::eulerStep(*ps2_, *ps_, step_, enable_collisions, &renderer.rt, &renderer.cloth_rt, enable_particle_collision_vectors, enable_particle_vectors, false);
-					break;
-				case TRAPEZOID_INTEGRATOR:
-					integrator::trapezoidStep(*ps_, *ps_, step_, enable_collisions, &renderer.rt, &renderer.cloth_rt, enable_particle_collision_vectors, enable_particle_vectors, true);
-					if (ps_type_ == SPRINKLER_AND_CLOTH)
-						integrator::trapezoidStep(*ps2_, *ps_, step_, enable_collisions, &renderer.rt, &renderer.cloth_rt, enable_particle_collision_vectors, enable_particle_vectors, false);
-					break;
-				case MIDPOINT_INTEGRATOR:
-					integrator::midpointStep(*ps_, *ps_, step_, enable_collisions, &renderer.rt, enable_particle_collision_vectors, enable_particle_vectors, true);
-					if (ps_type_ == SPRINKLER_AND_CLOTH)
-						integrator::midpointStep(*ps2_, *ps_, step_, enable_collisions, &renderer.rt, enable_particle_collision_vectors, enable_particle_vectors, false);
-					break;
-				case RK4_INTEGRATOR:
-					integrator::rk4Step(*ps_, *ps_, step_, enable_collisions, &renderer.rt, &renderer.cloth_rt, enable_particle_collision_vectors, enable_particle_vectors, true);
-					if (ps_type_ == SPRINKLER_AND_CLOTH)
-						integrator::rk4Step(*ps2_, *ps_, step_, enable_collisions, &renderer.rt, &renderer.cloth_rt, enable_particle_collision_vectors, enable_particle_vectors, false);
-					break;
-				default:
-					assert(false && " invalid integrator type");
-				}*/
 				if ((renderer.shading_mode || enable_particle_cloth_collisions) && (ps_type_ == SPRINKLER_AND_CLOTH || ps_type_ == CLOTH_SYSTEM))
 				{
 					glBindBuffer(GL_ARRAY_BUFFER, renderer.mesh[1].VBO);
 					glBufferData(GL_ARRAY_BUFFER, sizeof(Vertex)* renderer.mesh[1].vertices.size(), renderer.mesh[1].vertices.data(), GL_DYNAMIC_DRAW);
 					glBindBuffer(GL_ARRAY_BUFFER, 0);
-					/*if (enable_particle_cloth_collisions && (ps_type_ == SPRINKLER_AND_CLOTH || ps_type_ == CLOTH_SYSTEM))
-					{
-						if (framecount % 100 == 0)
-						{
-							renderer.cloth_rt.constructHierarchy(renderer.mesh[1].triangles);
-							framecount = 0;
-						}
-						else
-							renderer.cloth_rt.updateAABBs(renderer.mesh[1].triangles);
-					}*/
 				}
 				framecount++;
 			}
 		}
+
+		if (moviemode && renderer.process_png)
+		{
+			current_sequence_frame++;
+
+			//convert frame number to string
+			int temp_number = current_sequence_frame;
+			int divisor = 1000;
+			char number[5];
+			for (int i = 3; i >= 0; --i)
+			{
+				int temp_remnant = temp_number / divisor;
+				number[3 - i] = temp_remnant + '0';
+
+				temp_number -= temp_remnant * divisor;
+				divisor /= 10;
+			}
+			number[4] = '\0';
+			auto name = image_sequence_name + number + ".png";
+			cout << "opening image frame: " << name.getPtr() << endl;
+			renderer.envimap = Texture::import(name);
+			clearError();
+			if (!renderer.envimap.exists())
+			{
+				renderer.envimap = Texture::import(image_sequence_name + "0000.png");
+				current_sequence_frame = 0;
+			}
+			postProcessImage();
+		}
+		
 		common_ctrl_.message(sprintf("Use Home/End to rotate camera."), "instructions");
 		common_ctrl_.message(sprintf("%.0f supersamples", renderer.framenum), "camerainfo");
 	}

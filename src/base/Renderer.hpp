@@ -85,6 +85,9 @@ namespace FW
 		bool				sprinkler_makes_lights = true;
 		bool				renderer_accumulate_indefinitely = false;
 		bool				process_png = false;
+		bool				render_greyscale = false;
+		bool				moviemode = false;
+		bool				show_postprocessing = true;
 		Vec3f				hitposition = 0;
 
 

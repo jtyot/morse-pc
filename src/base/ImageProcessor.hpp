@@ -12,12 +12,17 @@ namespace FW
 	struct blinker //class that describes a detected light, whether it's a sender we're following or just a streetlight
 	{
 		Vec2f pos; //position of light on screen
+		Vec2f vel, acc;
+		Vec2f prev_pos, prev_vel;
 		static int blinkerID;
-		int size;
+		float size;
 		int ID;
 		float brightness;
+		float dt = 1e9;
 		float mass = 1;
 		bool isDead = false;
+		bool firstUpdate = true;
+		bool remove = false;
 		std::chrono::high_resolution_clock::time_point lastseen; //time point when we last saw this light
 
 		blinker(const Vec2f pos, const std::chrono::high_resolution_clock& timer, int size, float brightness) : pos(pos), lastseen(timer.now()), size(size), brightness(brightness), ID(blinkerID++) {}
@@ -40,7 +45,7 @@ namespace FW
 
 		Vec2f getCurPos(float t) const
 		{
-			return pos;
+			return pos;// +vel * t;// +.5f * acc * t * t;
 		}
 
 		Vec2f getCurPos(const std::chrono::high_resolution_clock& timer) const //gets 2nd-order approximation of current position
@@ -49,23 +54,41 @@ namespace FW
 			return getCurPos(t);
 		}
 
-		void updatePos(const Vec2f new_pos, const std::chrono::high_resolution_clock& timer, int new_size, float new_brightness)
+		void mergePos(const Vec2f new_pos, int new_size, float new_brightness, float other_mass = 1)
 		{
-			brightness = new_brightness;
-			size = new_size;
-			pos = (new_pos + pos * mass) / (mass+1.0f);
+			brightness = (new_brightness * other_mass + brightness * mass) / (mass + other_mass);
+			size = (new_size * other_mass + size * mass) / (mass + other_mass);
+			pos = (new_pos * other_mass + pos * mass) / (mass + other_mass);
 			mass++;
-			lastseen = timer.now();
+			isDead = false;
 		}
 
-		bool tryUpdate(const Vec2f new_pos, const std::chrono::high_resolution_clock& timer, int new_size, float new_brightness)
+		void update(const std::chrono::high_resolution_clock& timer)
 		{
-			if ((new_pos - getCurPos(timer)).length() < .15f)
+			if (isDead)
+				return;
+
+			if (firstUpdate)
 			{
-				updatePos(new_pos, timer, new_size, new_brightness);
-				return true;
+				prev_pos = pos;
+				prev_vel = vel;
 			}
-			return false;
+
+			dt = time(timer);
+			lastseen = timer.now();
+			auto new_vel = pos - prev_pos;
+			vel = new_vel / dt;
+			auto new_acc = vel - prev_vel;
+			acc = new_acc / dt;
+			prev_pos = pos;
+			prev_vel = vel;
+
+			firstUpdate = false;
+		}
+
+		bool operator==(const blinker& other)
+		{
+			return other.ID == ID;
 		}
 	};
 
@@ -85,13 +108,14 @@ namespace FW
 		bool				show_unseenblinkers = true;
 
 		int					smoothing_kernel_size = 1;
-		int					downscalefactor_slider = 5;
-		int					pointsearch_min = 2;
-		int					pointsearch_max = 5;
+		int					downscalefactor_slider = 2;
+		int					pointsearch_min = 1;
+		int					pointsearch_max = 4;
 
-		float				lightsearch_threshold = .1f;
+		float				lightsearch_threshold = .06f;
 		float				pointsearch_threshold = .1f;
-		float				light_min_distance = .15f;
+		float				light_min_distance = .011f;
+		float				shadowCutOff = .2f;
 		std::vector<float>  sumImage;
 
 		ImageProcessor(Renderer* renderer) : renderer(renderer){ 
