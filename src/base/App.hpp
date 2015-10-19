@@ -100,6 +100,8 @@ private:
 
 	glGeneratedIndices	gl_;
 
+	std::map<FW::String, std::vector<Vec3u8>> imageSequence;
+
 
 	// YOUR CODE HERE (R1)
 	// Add a class member to store the current translation.

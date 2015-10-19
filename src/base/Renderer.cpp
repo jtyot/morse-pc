@@ -160,6 +160,10 @@ namespace FW
 		glGenBuffers(1, &pointVBO);
 		glGenVertexArrays(1, &gl.static_vao);
 		glGenBuffers(1, &gl.static_vertex_buffer);
+		glGenTextures(1, &imageTexture);
+		glBindTexture(GL_TEXTURE_2D, imageTexture);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 
 		GLContext::checkErrors();
 	}
@@ -195,7 +199,6 @@ namespace FW
 		C.setCol(1, Vec4f(rot.getCol(1), 0));
 		C.setCol(2, Vec4f(rot.getCol(2), 0));
 		C.setCol(3, Vec4f(-cam.getPosition(), 1));
-		Vec3f light_pos = primarylights[0].camera.getPosition();
 		Mat4f world_to_clip;
 		Random rnd(framenum * samples_per_draw);
 		GLContext::checkErrors();
@@ -274,9 +277,16 @@ namespace FW
 		glDisable(GL_BLEND);
 		shader["postprocess"].use();
 		glViewport(0, 0, lastsize.x, lastsize.y);
+		auto size = envimap.getSize();
+
+		glBindTexture(GL_TEXTURE_2D, imageTexture);
+		glTexImage2D(GL_TEXTURE_2D, 0, GL_SRGB8, size.x, size.y, 0, GL_RGB, GL_UNSIGNED_BYTE, image_data.data());
 
 		glActiveTexture(GL_TEXTURE0);
-		glBindTexture(GL_TEXTURE_2D, envimap.getGLTexture());
+		glBindTexture(GL_TEXTURE_2D, imageTexture);
+
+		/*glActiveTexture(GL_TEXTURE0);
+		glBindTexture(GL_TEXTURE_2D, envimap.getGLTexture());*/
 
 		shader["postprocess"].sendUniform("tex", 0);
 		shader["postprocess"].sendUniform("flip_y", Vec2f(1.0f, -1.0f));
@@ -284,7 +294,6 @@ namespace FW
 		shader["postprocess"].sendUniform("greyscale", 0);
 
 		shader["postprocess"].sendUniform("use_weight", 0);
-		shader["postprocess"].sendUniform("screen", window.getSize());
 		shader["postprocess"].sendUniform("projectionoffset", Vec2f());
 
 		glBindBuffer(GL_ARRAY_BUFFER, fullscreenVBO_uv);
@@ -298,7 +307,6 @@ namespace FW
 		//glBindFramebuffer(GL_FRAMEBUFFER, 0);
 		glEnable(GL_BLEND);
 		//glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-		auto size = envimap.getSize();
 		GLContext::checkErrors();
 		glViewport(0, 0, lastsize.x, lastsize.y);
 		imageProcessor.processImage(image_data, size);
@@ -339,7 +347,6 @@ namespace FW
 		glBindTexture(GL_TEXTURE_2D, framebuffer["accumulate"].textures["weight"].ID);
 		shader["postprocess"].sendUniform("weight", 1);
 		shader["postprocess"].sendUniform("use_weight", 1);
-		shader["postprocess"].sendUniform("screen", window.getSize());
 		shader["postprocess"].sendUniform("projectionoffset", show_postprocessing ? projectionoffset : Vec2f(.0f));
 		cout << projectionoffset.x << ", " << projectionoffset.y << endl;
 		glEnable(GL_FRAMEBUFFER_SRGB);

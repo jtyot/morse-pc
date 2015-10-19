@@ -7,10 +7,9 @@ uniform float time;
 uniform int greyscale;
 uniform int use_weight;
 uniform vec2 flip_y;
-uniform vec2 screen;
 uniform vec2 projectionoffset;
 uniform float shadowCutOff;
-out vec4 fColor;
+layout (location = 0) out vec4 fColor;
 
 vec3 tonemap(vec3 col, float toneMapWhite)
 {

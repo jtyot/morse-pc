@@ -154,15 +154,11 @@ steps_per_update_(5)
 	common_ctrl_.showFPS(true);
 	common_ctrl_.addButton(&model_changed_, FW_KEY_M, "Load scene (M)");
 	common_ctrl_.addToggle(&moviemode, FW_KEY_P, "Toggle image sequence playback (P)");
-	common_ctrl_.addSeparator();
-	common_ctrl_.addToggle(&renderer.shading_mode, FW_KEY_T, "Toggle shading mode (T)", &shading_mode_changed_);
-	common_ctrl_.addToggle(&renderer.imageProcessor.blit_texture_back, FW_KEY_Y, "Toggle point blinking (Y)");
 	common_ctrl_.addToggle(&renderer.render_greyscale, FW_KEY_B, "Toggle render only blue channel (B)");
 	common_ctrl_.addToggle(&renderer.show_postprocessing, FW_KEY_NONE, "Toggle postprocessing visibility");
 	common_ctrl_.addSeparator();
 	common_ctrl_.addToggle(&renderer.imageProcessor.stabilize_image, FW_KEY_U, "Toggle image stabilization (U)");
 	common_ctrl_.addToggle(&renderer.imageProcessor.show_histograms, FW_KEY_NONE, "Toggle histogram display");
-	common_ctrl_.addToggle(&renderer.imageProcessor.show_searchpoints, FW_KEY_NONE, "Toggle search point display");
 	common_ctrl_.addToggle(&renderer.imageProcessor.show_unseenblinkers, FW_KEY_NONE, "Toggle unseen blinker visibility");
 	common_ctrl_.addSeparator();
 
@@ -170,7 +166,6 @@ steps_per_update_(5)
 	common_ctrl_.showFPS(true);
 
 	common_ctrl_.beginSliderStack();
-	common_ctrl_.addSlider((S32*)&renderer.samples_per_draw, 1, 100, false, FW_KEY_NONE, FW_KEY_NONE, "Render samples: %d");
 	common_ctrl_.addSlider((S32*)&renderer.imageProcessor.downscalefactor_slider, 1, 60, false, FW_KEY_NONE, FW_KEY_NONE, "Downscale factor: %d");
 	common_ctrl_.addSlider((S32*)&renderer.imageProcessor.pointsearch_max, 1, 15, false, FW_KEY_NONE, FW_KEY_NONE, "point search count: %d");
 	common_ctrl_.addSlider((S32*)&renderer.imageProcessor.pointsearch_min, 1, 15, false, FW_KEY_NONE, FW_KEY_NONE, "point search scale: %d");
@@ -200,14 +195,13 @@ void App::postProcessImage()
 {
 	auto size = renderer.envimap.getSize();
 	auto img = renderer.envimap.getImage();
-	renderer.image_data.resize(size.x * size.y * sizeof(Vec4f));
+	renderer.image_data.resize(size.x * size.y);
+	auto data = img->getPtr();
 	for (int x = 0; x < size.x; ++x)
 	{
 		for (int y = 0; y < size.y; ++y)
 		{
-			auto vec = img->getVec4f(Vec2i(x, y));
-			vec.w = 1.0f;
-			renderer.image_data[y * size.x + x] = vec;
+			renderer.image_data[y * size.x + x] = Vec3u8(data[(y * size.x + x) * 3 + 0], data[(y * size.x + x) * 3 + 1], data[(y * size.x + x) * 3 + 2]);
 		}
 	}
 }
@@ -243,6 +237,10 @@ bool App::handleEvent(const Window::Event& ev) {
 				current_sequence_frame = 0;
 			}
 			postProcessImage();
+
+			imageSequence.clear();
+			auto number = filename.substring(filename.getLength() - FW::String("0000.png").getLength(), filename.getLength() - FW::String(".png").getLength());
+			imageSequence[number] = renderer.image_data;
 		}
 		
 		// Load the vertex buffer to GPU.
@@ -367,15 +365,21 @@ bool App::handleEvent(const Window::Event& ev) {
 			}
 			number[4] = '\0';
 			auto name = image_sequence_name + number + ".png";
-			cout << "opening image frame: " << name.getPtr() << endl;
-			renderer.envimap = Texture::import(name);
-			clearError();
-			if (!renderer.envimap.exists())
+			auto numstr = FW::String(number);
+			if (imageSequence[numstr].size() == 0)
 			{
-				renderer.envimap = Texture::import(image_sequence_name + "0000.png");
-				current_sequence_frame = 0;
+				renderer.envimap = Texture::import(name);
+				clearError();
+				if (!renderer.envimap.exists())
+				{
+					renderer.envimap = Texture::import(image_sequence_name + "0000.png");
+					current_sequence_frame = 0;
+				}
+				postProcessImage();
+				imageSequence[numstr] = renderer.image_data;
 			}
-			postProcessImage();
+			else
+				renderer.image_data = imageSequence[numstr];
 		}
 		
 		common_ctrl_.message(sprintf("Use Home/End to rotate camera."), "instructions");

@@ -7,6 +7,16 @@
 
 namespace FW
 {
+	struct Vec3u8
+	{
+		unsigned char x = 0, y = 0, z = 0;
+
+		Vec3f getVec3f() const { return Vec3f(x / 255.0f, y / 255.0f, z / 255.0f); }
+		Vec3u8(const Vec3f& vec){ x = vec.x * 255.0f; y = vec.y * 255.0f; z = vec.z * 255.0f; }
+		Vec3u8(const U8& x, const U8& y, const U8& z) : x(x), y(y), z(z){}
+		Vec3u8(){}
+	};
+
 	struct Renderer;
 
 	struct blinker //class that describes a detected light, whether it's a sender we're following or just a streetlight
@@ -98,7 +108,7 @@ namespace FW
 	public:
 		std::vector<Vec3f> blinkerColors;
 		Random				rnd;
-		void				processImage(const std::vector<Vec4f>& imageData, const Vec2i& size);
+		void				processImage(const std::vector<Vec3u8>& imageData, const Vec2i& size);
 		int					expandPixel(int i, float threshold, std::vector<float>& histogram, std::vector<bool>& visited, int orig_i, int maxdist);
 
 		bool				blit_texture_back = true;

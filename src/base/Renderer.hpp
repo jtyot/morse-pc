@@ -56,7 +56,7 @@ namespace FW
 		std::vector<Vec3f>	lightPoses;
 		std::vector<Mesh>	mesh;
 		std::vector<Vec3f> lightpoints;
-		std::vector<Vec4f> image_data;
+		std::vector<Vec3u8> image_data;
 		std::chrono::high_resolution_clock timer;
 		std::chrono::high_resolution_clock::time_point lastswap;
 		Vec2f				projectionoffset = 0;
@@ -120,5 +120,6 @@ namespace FW
 		GLuint				fullscreenVBO_uv, fullscreenVAO_uv;
 		GLuint				pointVBO;
 		GLuint				viewtexture;
+		GLuint				imageTexture;
 	};
 }

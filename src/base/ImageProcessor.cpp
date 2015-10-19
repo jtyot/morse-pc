@@ -13,7 +13,7 @@ bool inBounds(Vec2i pos, Vec2i size)
 }
 
 
-void ImageProcessor::processImage(const std::vector<Vec4f>& imageData, const Vec2i& size_in)
+void ImageProcessor::processImage(const std::vector<Vec3u8>& imageData, const Vec2i& size_in)
 {
 	int downscalefactor = downscalefactor_slider;
 	if (size_in != lastsize || lastdownscalefactor != downscalefactor)
@@ -44,7 +44,7 @@ void ImageProcessor::processImage(const std::vector<Vec4f>& imageData, const Vec
 	{
 		for (int i = 0; i < lastsize.x; i++)
 		{
-			auto orig_value = imageData[j * lastsize.x + i].getXYZ();
+			auto orig_value = imageData[j * lastsize.x + i].getVec3f();
 			auto value = dot(orig_value, Vec3f(.333f)); //greyscale for histogram
 			value = max(.0f, value - shadowCutOff) * shadowWeight;
 			int x = i / downscalefactor;
