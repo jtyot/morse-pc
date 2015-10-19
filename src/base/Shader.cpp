@@ -25,6 +25,7 @@ Shader::Shader(string namein, GLContext* glCtx, bool loadgeometryshader)
 
 void Shader::load(GLContext* glCtx, bool loadgeometryshader)
 {
+	cout << "loading shader " << name << "...";
 	string vert = loadshader("shaders/" + name + ".vert");
 	string frag = loadshader("shaders/" + name + ".frag");
 	string geom;
@@ -38,6 +39,7 @@ void Shader::load(GLContext* glCtx, bool loadgeometryshader)
 	glCtx->setProgram(name.c_str(), shader_program);
 	programID = shader_program->getHandle();
 	GLContext::checkErrors();
+	cout << "Done!\n";
 }
 
 void Shader::unload(GLContext* glCtx)

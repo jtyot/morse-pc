@@ -67,16 +67,17 @@ void ImageProcessor::processImage(const std::vector<Vec4f>& imageData, const Vec
 		}
 	}
 
+	//normalize histogram by dividing values by number of pixels in sum
 	for (int i = 0; i < size.x; ++i)
 	{
-		float w = 1.0f - abs(i - size.x / 2.0f) / (size.x / 2.0f);
+		float w = 1.0f - abs(i - size.x / 2.0f) / (size.x / 2.0f); //pixels near center of image have higher importance
 		histoX[i] *= invsizex * w;
 		maxvalue.x = max(histoX[i], maxvalue.x);
 	}
 
 	for (int i = 0; i < size.y; ++i)
 	{
-		float w = 1.0f - abs(i - size.y / 2.0f) / (size.y / 2.0f);
+		float w = 1.0f - abs(i - size.y / 2.0f) / (size.y / 2.0f); //pixels near center of image have higher importance
 		histoY[i] *= invsizey * w;
 		maxvalue.y = max(histoY[i], maxvalue.y);
 	}
@@ -85,10 +86,10 @@ void ImageProcessor::processImage(const std::vector<Vec4f>& imageData, const Vec
 	histograms[0] = &histoX;
 	histograms[1] = &histoY;
 
-	//render histograms
 	std::vector<Vec3f> histoPoints;
 	histoPoints.reserve(size.x * 2 + size.y * 2);
 
+	//render histograms
 	if (show_histograms)
 	{
 		for (int axis = 0; axis < 2; axis++){
@@ -263,6 +264,7 @@ void ImageProcessor::processImage(const std::vector<Vec4f>& imageData, const Vec
 		}
 	}
 
+	//merge blinkers that are too close to each other
 	for (auto& p : blinkers)
 	{
 		for (auto& q : blinkers)
@@ -273,7 +275,7 @@ void ImageProcessor::processImage(const std::vector<Vec4f>& imageData, const Vec
 			{
 				auto& smaller = p;
 				auto& larger = q;
-				if (p.ID < q.ID)
+				if (p.ID < q.ID) //choose the older blinker, the other one gets removed
 				{
 					std::swap(p, q);
 				}
@@ -291,7 +293,7 @@ void ImageProcessor::processImage(const std::vector<Vec4f>& imageData, const Vec
 	histoPoints.clear();
 	//eliminate dead blinkers
 	vector<blinker> new_blinkers;
-	for (int i = 0; i < blinkers.size(); ++i)
+	for (int i = 0; i < blinkers.size(); ++i) //discard blinkers that have not been seen in a while, and removed blinkers
 	{
 		auto& p = blinkers[i];
 		p.mass = 0;
@@ -301,12 +303,11 @@ void ImageProcessor::processImage(const std::vector<Vec4f>& imageData, const Vec
 	blinkers = move(new_blinkers);
 
 	//render blinkers as squares
-	//histoPoints.clear();
 	for (auto& p : blinkers)
 	{
 		auto pos = p.getCurPos(timer);
 
-		float radius = p.size;// / downscalefactor;
+		float radius = p.size;
 		if (p.isDead)
 		{
 			if (show_unseenblinkers)
