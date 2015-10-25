@@ -20,135 +20,13 @@ using namespace FW;
 using namespace std;
 
 
-void loadscene(const std::string filename, std::vector<RayTracer>& rts, std::vector<Mesh>& meshes)
-{
-	rts.clear();
-	meshes.clear();
-	std::string file_temp = filename;
-	for (auto& c : file_temp)
-		if (c == '\\')
-			c = ' ';
-	std::istringstream        iss(file_temp);
-	std::string s;
-	std::string filepath;
-	while (true)
-	{
-		iss >> s;
-		if (s == "" || s.find(".txt") != std::string::npos)
-			break;
-		else
-		{
-			filepath.append(s);
-			filepath.append("\\");
-		}
-	}
-
-	std::ifstream input(filename, std::ios::in);
-
-	std::string line;
-
-	std::cout << "loading scene " << filename << std::endl;
-
-	//vector<Mesh> meshes;
-	bool foundobj = false;
-	Mesh* cur_mesh = nullptr;
-	while (getline(input, line)) {
-		foundobj = true;
-		// Replace any '/' characters with spaces ' ' so that all of the
-		// values we wish to read are separated with whitespace.
-		for (int i = 0; i < line.size(); i++)
-		{
-			auto& c = line[i];
-			if (c == '/')
-			{
-				c = ' ';
-				auto& c2 = line[i + 1];
-				if (c2 == '/')
-				{
-					i++;
-					line.insert(i, 1, '/');
-				}
-			}
-		}
-
-		// Temporary objects to read data into.
-		Face  f, f1, f2; // Face index array
-		Vec3f               v;
-		Vec2f				uv;
-		std::string              s;
-
-		// Create a stream from the string to pick out one value at a time.
-		std::istringstream        iss(line);
-
-		// Read the first token from the line into string 's'.
-		// It identifies the type of object (vertex or normal or ...)
-		iss >> s;
-
-		if (s == "#")
-			continue;
-		if (s == "pos") { // vertex position
-			iss >> v.x >> v.y >> v.z;
-			cur_mesh->transformation.setCol(3, Vec4f(v, 1.0f));
-			cur_mesh->transformation_previous = cur_mesh->transformation;
-		}
-		if (s == "vel") {
-			iss >> v.x >> v.y >> v.z;
-			cur_mesh->vel = v;
-		}
-		if (s == "vel_rot") {
-			iss >> v.x >> v.y >> v.z;
-			cur_mesh->rotation_vel = v;
-		}
-		if (s == "scale") {
-			iss >> v.x >> v.y >> v.z;
-			cur_mesh->transformation *= Mat4f::scale(Vec4f(v, 1.0f));
-			cur_mesh->scale = v.x;
-			cur_mesh->transformation_previous = cur_mesh->transformation;
-		}
-		if (s == "orbit") {
-			iss >> v.x >> v.y >> v.z;
-			cur_mesh->orbitpoint = v;
-			cur_mesh->orbitspoint = true;
-			cur_mesh->orbitoffset = Vec4f(cur_mesh->transformation.getCol(3)).getXYZ() - v;
-		}
-		if (s == "orbit_speed") {
-			iss >> v.x;
-			cur_mesh->orbitspeed = v.x;
-		}
-		else if (s == "object") { // load new object
-			meshes.push_back(Mesh());
-			rts.push_back(RayTracer());
-			cur_mesh = &meshes[meshes.size() - 1];
-			iss >> s;
-			std::string str = filepath;
-			str.append(s);
-			cur_mesh->load(str);
-		}
-	}
-	//return meshes;
-}
-
-// Anonymous namespace. This is a C++ way to define things which
-// do not need to be visible outside this file.
-
-float rot_velocity = 1.0f;
-float model_velocity = 1.0f;
-Vec3f rot_axis = Vec3f(0, 1, 0);
-Random rnd;
-
 App::App(void)
 : common_ctrl_(CommonControls::Feature_Default & ~CommonControls::Feature_RepaintOnF5),
-current_model_(MODEL_NONE),
 model_changed_(true),
-cameraCtrl(&common_ctrl_, CameraControls::Feature_Default | CameraControls::Feature_StereoControls),
-shading_mode_changed_(false),
-step_(0.0001f),
-steps_per_update_(5)
+shading_mode_changed_(false)
 {
-	renderer.initRendering(gl_, window_, cameraCtrl);
+	renderer.initRendering(window_);
 	renderer.current_transformation_.setIdentity();
-	renderer.mesh.push_back(Mesh());
-	renderer.mesh.push_back(Mesh());
 
 
 	common_ctrl_.showFPS(true);
@@ -178,10 +56,6 @@ steps_per_update_(5)
 	common_ctrl_.addSlider((F32*)&renderer.imageProcessor.light_min_distance, .0f, .1f, false, FW_KEY_NONE, FW_KEY_NONE, "lightpoint min distance: %.4f");
 	common_ctrl_.endSliderStack();
 
-	window_.addListener(&cameraCtrl);
-	cameraCtrl.setKeepAligned(true);
-	cameraCtrl.setPosition(0);
-	cameraCtrl.setFar(20.0f);
 
 	window_.setTitle("Assignment 0");
 
@@ -214,17 +88,6 @@ bool App::handleEvent(const Window::Event& ev) {
 		renderer.process_png = false;
 		auto filename = window_.showFileLoadDialog("Load new scene");
 
-		if (filename.endsWith(".txt")) //if scene file
-		{
-			loadscene(filename.getPtr(), renderer.rt, renderer.mesh);
-			changed = true;
-		}
-		else if (filename.endsWith(".obj") || filename.endsWith(".OBJ")){ //if mesh file
-			renderer.mesh[0].load(filename.getPtr());
-			renderer.rt.clear();
-			renderer.rt.push_back(RayTracer());
-			changed = true;
-		}
 		if (filename.endsWith(".png")) //if picture
 		{
 			renderer.envimap = Texture::import(filename);
@@ -243,21 +106,6 @@ bool App::handleEvent(const Window::Event& ev) {
 			imageSequence[number] = renderer.image_data;
 		}
 		
-		// Load the vertex buffer to GPU.
-		if (changed)
-		{
-			renderer.clear_screen = true;
-			cout << "loading BVH" << endl;
-
-			//build raytracers for each mesh
-			int i = 0;
-			for (auto& rt : renderer.rt){
-				rt.constructHierarchy(renderer.mesh[i].triangles);
-				++i;
-			}
-
-			cout << "BVH loaded" << endl;
-		}
 	}
 
 	if (shading_mode_changed_) {
@@ -270,39 +118,14 @@ bool App::handleEvent(const Window::Event& ev) {
 
 
 	if (ev.type == Window::EventType_KeyDown) {
-		if (ev.key == FW_KEY_CONTROL)
-		{
-			float ang = tan(.5f * renderer.fov * FW_PI / 180.0f);
-			Vec2f screen = window_.getSize();
-			Vec3f start = cameraCtrl.getPosition();
-			Vec3f dir = (cameraCtrl.getCameraToWorld() * Vec4f(mousepos * ang * Vec2f(screen.x / screen.y, 1.0f), -1.0f, .0f)).getXYZ();
 
-		}
-		if (ev.key == FW_KEY_SPACE)
-		{
-			renderer.primarylights[0].position = cameraCtrl.getPosition();
-			renderer.primarylights[0].camera.setForward(cameraCtrl.getForward());
-			cameraCtrl.getPosition().print();
-		}
 	}
 
 	if (ev.type == Window::EventType_KeyUp) {
-		if (ev.key == FW_KEY_F5)
-		{
-			renderer.reload_shaders = true;
-		}
-		if (ev.key == FW_KEY_ALT)
-		{
-			grabbing = false;
-		}
+
 	}
 	if (ev.type == Window::EventType_Mouse) {
-		if (Vec2f(ev.mouseDelta).length())
-		{
-			Vec2f lastpos = mousepos;
-			mousepos = (Vec2f(ev.mousePos) - Vec2f(window_.getSize()) * .5f) * 2.0f / Vec2f(window_.getSize());
-			mousepos.y *= -1;
-		}
+
 	}
 
 
@@ -327,25 +150,8 @@ bool App::handleEvent(const Window::Event& ev) {
 		}
 		renderer.clear_screen = true;
 		renderer.moviemode = moviemode;
-		renderer.motionblur_shutter_time = shutter_duration;
-		for (int j = 0; j < shutter_duration; j++)
-		{
-			float t = rnd.getF32(-1,1);
-			renderer.model_rotation = rot_velocity;
-			renderer.model_velocity = model_velocity;
-			renderer.render(gl_, window_, cameraCtrl, j + 1 == shutter_duration, shutter_duration, step_ * steps_per_update_);
-			if (!renderer.renderer_accumulate_indefinitely)
-			for (int i = 0; i < steps_per_update_; ++i) 
-			{
-				if ((renderer.shading_mode || enable_particle_cloth_collisions) && (ps_type_ == SPRINKLER_AND_CLOTH || ps_type_ == CLOTH_SYSTEM))
-				{
-					glBindBuffer(GL_ARRAY_BUFFER, renderer.mesh[1].VBO);
-					glBufferData(GL_ARRAY_BUFFER, sizeof(Vertex)* renderer.mesh[1].vertices.size(), renderer.mesh[1].vertices.data(), GL_DYNAMIC_DRAW);
-					glBindBuffer(GL_ARRAY_BUFFER, 0);
-				}
-				framecount++;
-			}
-		}
+
+		renderer.render(window_);
 
 		if (moviemode && renderer.process_png)
 		{

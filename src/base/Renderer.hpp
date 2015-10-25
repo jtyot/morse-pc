@@ -5,11 +5,8 @@
 #include "3d/Texture.hpp"
 #include "base/Random.hpp"
 #include "3d/CameraControls.hpp"
-#include "RayTracer.hpp"
-#include "Light.hpp"
 #include "ImageProcessor.hpp"
 
-#include "Mesh.hpp"
 #include "Shader.hpp"
 #include "Framebuffer.hpp"
 
@@ -24,16 +21,6 @@
 
 namespace FW
 {
-
-	struct glGeneratedIndices
-	{
-		GLuint static_vao;
-		GLuint static_vertex_buffer;
-		GLuint model_to_world_uniform, normal_transform_uniform, world_to_clip_uniform;
-		GLuint time_uniform, shading_toggle_uniform, cam_pos;
-		GLuint shader_program, postprocess_program, accumulate_program;
-		GLuint envimap_sampler, postprocess_sampler, accumulate_sampler, weight_sampler;
-	};
 	class Renderer
 	{
 
@@ -42,9 +29,6 @@ namespace FW
 		virtual				~Renderer() {}	// destructor
 
 		ImageProcessor imageProcessor;
-		std::vector<RayTracer>rt;
-		std::vector<Light>	primarylights;
-		Light				templight;
 
 		Mat4f				last_transformation;
 		Mat4f				current_transformation_;
@@ -54,7 +38,6 @@ namespace FW
 		std::map<std::string, Shader> shader;
 		std::map<std::string, Framebuffer> framebuffer;
 		std::vector<Vec3f>	lightPoses;
-		std::vector<Mesh>	mesh;
 		std::vector<Vec3f> lightpoints;
 		std::vector<Vec3u8> image_data;
 		std::chrono::high_resolution_clock timer;
@@ -91,8 +74,8 @@ namespace FW
 		Vec3f				hitposition = 0;
 
 
-		void				initRendering(glGeneratedIndices& gl, Window& window, CameraControls& cam);
-		void				render(glGeneratedIndices& gl, Window& window, CameraControls& cam, bool drawscreen, float shuttertime, float timestep);
+		void				initRendering(Window& window);
+		void				render(Window& window);
 
 		void				sampleLightTri();
 		void				renderVector(std::vector<Vec3f>& vec, GLenum mode, Mat4f world_to_clip);

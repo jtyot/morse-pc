@@ -52,9 +52,6 @@
     <PlatformToolset>v120</PlatformToolset>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
-  <ImportGroup Label="ExtensionSettings">
-    <Import Project="$(VCTargetsPath)\BuildCustomizations\CUDA 7.0.props" />
-  </ImportGroup>
   <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" Label="PropertySheets">
     <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
   </ImportGroup>
@@ -95,7 +92,7 @@
     <ClCompile>
       <Optimization>Disabled</Optimization>
       <WholeProgramOptimization>false</WholeProgramOptimization>
-      <AdditionalIncludeDirectories>src\framework;$(CUDA_PATH)/include$(CUDA_INC_PATH);$(IntDir);%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>src\framework;$(IntDir);%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>WIN32;_DEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <MinimalRebuild>false</MinimalRebuild>
       <ExceptionHandling>Sync</ExceptionHandling>
@@ -119,10 +116,6 @@
       <TargetMachine>MachineX86</TargetMachine>
       <AdditionalDependencies>kernel32.lib;user32.lib;gdi32.lib;winspool.lib;comdlg32.lib;advapi32.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;odbc32.lib;odbccp32.lib;opengl32.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
-    <CudaCompile>
-      <Include>
-      </Include>
-    </CudaCompile>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <BuildLog>
@@ -134,7 +127,7 @@
     <ClCompile>
       <Optimization>Disabled</Optimization>
       <WholeProgramOptimization>false</WholeProgramOptimization>
-      <AdditionalIncludeDirectories>src\framework;$(CUDA_PATH)/include..\..\..\taila\pathtracing\nvray\include;$(CUDA_INC_PATH);$(IntDir);%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>src\framework;$(IntDir);%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>WIN32;_DEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <MinimalRebuild>false</MinimalRebuild>
       <ExceptionHandling>Sync</ExceptionHandling>
@@ -158,10 +151,6 @@
       <TargetMachine>MachineX64</TargetMachine>
       <AdditionalDependencies>kernel32.lib;user32.lib;gdi32.lib;winspool.lib;comdlg32.lib;advapi32.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;odbc32.lib;odbccp32.lib;opengl32.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
-    <CudaCompile>
-      <Include>
-      </Include>
-    </CudaCompile>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <BuildLog>
@@ -171,7 +160,7 @@
       <Optimization>Full</Optimization>
       <FavorSizeOrSpeed>Speed</FavorSizeOrSpeed>
       <WholeProgramOptimization>false</WholeProgramOptimization>
-      <AdditionalIncludeDirectories>src\framework;$(CUDA_PATH)/include$(CUDA_INC_PATH);$(IntDir);%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>src\framework;$(IntDir);%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>WIN32;NDEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ExceptionHandling>
       </ExceptionHandling>
@@ -198,10 +187,6 @@
       <AdditionalDependencies>kernel32.lib;user32.lib;gdi32.lib;winspool.lib;comdlg32.lib;advapi32.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;odbc32.lib;odbccp32.lib;opengl32.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <AdditionalLibraryDirectories>.\lib</AdditionalLibraryDirectories>
     </Link>
-    <CudaCompile>
-      <Include>
-      </Include>
-    </CudaCompile>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <BuildLog>
@@ -214,7 +199,7 @@
       <Optimization>Full</Optimization>
       <FavorSizeOrSpeed>Speed</FavorSizeOrSpeed>
       <WholeProgramOptimization>false</WholeProgramOptimization>
-      <AdditionalIncludeDirectories>src\framework;$(CUDA_PATH)/include..\..\..\taila\pathtracing\nvray\include;$(CUDA_INC_PATH);$(IntDir);%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>src\framework;$(IntDir);%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>WIN32;NDEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ExceptionHandling>
       </ExceptionHandling>
@@ -243,10 +228,6 @@
       <GenerateMapFile>false</GenerateMapFile>
       <AssemblyDebug>false</AssemblyDebug>
     </Link>
-    <CudaCompile>
-      <Include>
-      </Include>
-    </CudaCompile>
   </ItemDefinitionGroup>
   <ItemGroup>
     <ProjectReference Include="framework.vcxproj">
@@ -254,49 +235,26 @@
     </ProjectReference>
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="src\base\App.hpp" />
+    <ClInclude Include="src\base\Framebuffer.hpp" />
+    <ClInclude Include="src\base\ImageProcessor.hpp" />
+    <ClInclude Include="src\base\Renderer.hpp" />
+    <ClInclude Include="src\base\Shader.hpp" />
+  </ItemGroup>
+  <ItemGroup>
     <ClCompile Include="src\base\App.cpp" />
-    <ClCompile Include="src\base\BvhNode.cpp" />
     <ClCompile Include="src\base\Framebuffer.cpp" />
     <ClCompile Include="src\base\ImageProcessor.cpp" />
-    <ClCompile Include="src\base\Light.cpp" />
-    <ClCompile Include="src\base\Mesh.cpp" />
-    <ClCompile Include="src\base\RayTracer.cpp" />
     <ClCompile Include="src\base\Renderer.cpp" />
     <ClCompile Include="src\base\Shader.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="gputracer.hpp" />
-    <ClInclude Include="src\base\App.hpp" />
-    <ClInclude Include="src\base\BvhNode.hpp" />
-    <ClInclude Include="src\base\Framebuffer.hpp" />
-    <ClInclude Include="src\base\ImageProcessor.hpp" />
-    <ClInclude Include="src\base\Light.hpp" />
-    <ClInclude Include="src\base\Mesh.hpp" />
-    <ClInclude Include="src\base\RayTracer.hpp" />
-    <ClInclude Include="src\base\Renderer.hpp" />
-    <ClInclude Include="src\base\Shader.hpp" />
-    <ClInclude Include="src\base\utility.hpp" />
-  </ItemGroup>
-  <ItemGroup>
-    <None Include="shaders\accumulate.frag" />
-    <None Include="shaders\accumulate.vert" />
     <None Include="shaders\dot.frag" />
     <None Include="shaders\dot.vert" />
     <None Include="shaders\dot_color.frag" />
     <None Include="shaders\dot_color.vert" />
-    <None Include="shaders\model.frag" />
-    <None Include="shaders\model.vert" />
-    <None Include="shaders\particle.frag" />
-    <None Include="shaders\particle.vert" />
     <None Include="shaders\postprocess.frag" />
     <None Include="shaders\postprocess.vert" />
-    <None Include="shaders\shadow.frag" />
-    <None Include="shaders\shadow.vert" />
-    <None Include="src\base\gputracer.cu" />
-    <None Include="src\base\rtIntersect.inl" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
-  <ImportGroup Label="ExtensionTargets">
-    <Import Project="$(VCTargetsPath)\BuildCustomizations\CUDA 7.0.targets" />
-  </ImportGroup>
 </Project>

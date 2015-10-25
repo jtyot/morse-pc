@@ -1,5 +1,4 @@
 #include "Renderer.hpp"
-//#include "utility.hpp"
 
 #include <array>
 #include <cassert>
@@ -116,7 +115,7 @@ namespace FW
 		GLContext::checkErrors();
 	}
 
-	void Renderer::initRendering(glGeneratedIndices& gl, Window& window, CameraControls& cam) {
+	void Renderer::initRendering(Window& window) {
 		// Ask the Nvidia framework for the GLContext object associated with the window.
 		// As a side effect, this initializes the OpenGL context and lets us call GL functions.
 		auto ctx = window.getGL();
@@ -135,13 +134,6 @@ namespace FW
 		glGenBuffers(1, &fullscreenVBO_uv);
 		glBindBuffer(GL_ARRAY_BUFFER, fullscreenVBO_uv);
 		glBufferData(GL_ARRAY_BUFFER, 12 * sizeof(float), fsvbo_uv, GL_STATIC_DRAW);
-/*
-		framebuffer["shadow"].create(Vec2i(2000, 2000));
-		framebuffer["shadow"].addtexturearray(GL_DEPTH_ATTACHMENT, GL_DEPTH_COMPONENT32, lightsamples);
-
-		framebuffer["model"].create(window.getSize());
-		framebuffer["model"].addtexturetarget("canvas", GL_COLOR_ATTACHMENT0, GL_RGBA32F);
-		framebuffer["model"].addtexturetarget("depth", GL_DEPTH_ATTACHMENT, GL_DEPTH_COMPONENT32);*/
 
 		framebuffer["accumulate"].create(window.getSize());
 		framebuffer["accumulate"].addtexturetarget("color", GL_COLOR_ATTACHMENT0, GL_RGBA32F);
@@ -149,17 +141,11 @@ namespace FW
 
 		shader["dot"] = Shader("dot", ctx);
 		shader["dot_color"] = Shader("dot_color", ctx);
-		//shader["shadow"] = Shader("shadow", ctx, true);
-		//shader["model"] = Shader("model", ctx);
 		shader["postprocess"] = Shader("postprocess", ctx);
-		//shader["accumulate"] = Shader("accumulate", ctx);
-		//shader["particle"] = Shader("particle", ctx);
 		GLContext::checkErrors();
 
 		// Create vertex attribute objects and buffers for vertex data.
 		glGenBuffers(1, &pointVBO);
-		glGenVertexArrays(1, &gl.static_vao);
-		glGenBuffers(1, &gl.static_vertex_buffer);
 		glGenTextures(1, &imageTexture);
 		glBindTexture(GL_TEXTURE_2D, imageTexture);
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
@@ -168,7 +154,7 @@ namespace FW
 		GLContext::checkErrors();
 	}
 
-	void Renderer::render(glGeneratedIndices& gl, Window& window, CameraControls& cam, bool drawscreen, float shuttertime, float timestep) {
+	void Renderer::render(Window& window) {
 		//glUseProgram(0);
 		//if (reload_shaders)
 		//	reloadshaders(window);
@@ -185,83 +171,9 @@ namespace FW
 		if (window.getSize() / 2 != lastsize)
 		{
 			lastsize = window.getSize() / 2;
-			//framebuffer["model"].resize(lastsize);
 			framebuffer["accumulate"].resize(lastsize);
 			GLContext::checkErrors();
 		}
-
-		// Set up a matrix to transform from world space to clip space.
-		// Clip space is a [-1, 1]^3 space where OpenGL expects things to be
-		// when it starts drawing them.
-		Mat4f C;
-		Mat3f rot = cam.getOrientation().transposed();
-		C.setCol(0, Vec4f(rot.getCol(0), 0));
-		C.setCol(1, Vec4f(rot.getCol(1), 0));
-		C.setCol(2, Vec4f(rot.getCol(2), 0));
-		C.setCol(3, Vec4f(-cam.getPosition(), 1));
-		Mat4f world_to_clip;
-		Random rnd(framenum * samples_per_draw);
-		GLContext::checkErrors();
-		// Simple perspective.
-		static const float fnear = 0.01f, ffar = 40.0f;
-		Vec4f camvel = Vec4f(.01, .0, .02, .0)*.0;
-		float rotation_vel = .0;
-		//depth of field
-		float dx = 1, dy = 1;
-		while (dx*dx + dy*dy > 1)
-		{
-			dx = rnd.getF32(-1, 1);
-			dy = rnd.getF32(-1, 1);
-		}
-		Vec2f dof_d = Vec2f(dx, dy);
-		float r = length(dof_d);
-		float r2 = r * 1.4;
-		if (r > .5)
-			r2 += (r - .5) * 0.6;
-		dof_d.normalize();
-		dof_d *= r2 * aperture_size;
-		dx = dof_d.x;
-		dy = dof_d.y;
-
-		//anti aliasing
-		float dx1 = 1, dy1 = 1;
-
-		while (dx1*dx1 + dy1*dy1 > 1)
-		{
-			dx1 = rnd.getF32(-1, 1);
-			dy1 = rnd.getF32(-1, 1);
-		}
-		dx1 /= window.getSize().y / fnear;
-		dy1 /= window.getSize().y / fnear;
-
-		float aspect = float(window.getSize().x) / float(window.getSize().y);
-		r = tan(fov*.5f * 3.142f / 180.0f)*focal_dist;
-		float n_per_f = fnear / focal_dist;
-		float r1 = (r*aspect + dx) * n_per_f + dx1;
-		float l1 = (-r*aspect + dx) * n_per_f + dx1;
-		float t1 = (r + dy) * n_per_f + dy1;
-		float b1 = (-r + dy) * n_per_f + dy1;
-		Mat4f P;
-		P.setRow(0, Vec4f(2.0f * fnear / (r1 - l1), .0f, (r1 + l1) / (r1 - l1), .0f));
-		P.setRow(1, Vec4f(.0f, 2.0f * fnear / (t1 - b1), (t1 + b1) / (t1 - b1), .0f));
-		P.setRow(2, Vec4f(.0f, .0f, -(ffar + fnear) / (ffar - fnear), -2 * ffar*fnear / (ffar - fnear)));
-		P.setRow(3, Vec4f(.0f, .0f, -1.0f, .0f));
-
-		Mat4f offset;
-		offset.setIdentity();
-		float weight = sqrt(dx1*dx1 + dy1*dy1) * window.getSize().y / fnear;// / 2.0f;
-		float t = rnd.getF32();
-		weight = (1.0f - weight) * 3.0f / 3.1416f * 2 * (1.0f - 2 * abs(.5f - t));
-		offset.setCol(3, Vec4f(dx + dx1, dy + dy1, .0f, 1.0f) + camvel*t);
-		Mat4f temp_C;
-
-		temp_C = offset * cam.getWorldToCamera();
-		world_to_clip = P * temp_C;
-
-		Mat4f modelToWorld = current_transformation_;
-		modelToWorld.m00 *= model_scale;
-		modelToWorld.m11 *= model_scale;
-		modelToWorld.m22 *= model_scale;
 
 		glDisable(GL_BLEND);
 		glEnable(GL_DEPTH_TEST);
@@ -273,7 +185,6 @@ namespace FW
 		framebuffer["accumulate"].bind();
 		glDisable(GL_DEPTH_TEST);
 
-		//glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 		glDisable(GL_BLEND);
 		shader["postprocess"].use();
 		glViewport(0, 0, lastsize.x, lastsize.y);
@@ -285,8 +196,6 @@ namespace FW
 		glActiveTexture(GL_TEXTURE0);
 		glBindTexture(GL_TEXTURE_2D, imageTexture);
 
-		/*glActiveTexture(GL_TEXTURE0);
-		glBindTexture(GL_TEXTURE_2D, envimap.getGLTexture());*/
 
 		shader["postprocess"].sendUniform("tex", 0);
 		shader["postprocess"].sendUniform("flip_y", Vec2f(1.0f, -1.0f));
@@ -304,30 +213,19 @@ namespace FW
 		GLContext::checkErrors();
 
 
-		//glBindFramebuffer(GL_FRAMEBUFFER, 0);
 		glEnable(GL_BLEND);
-		//glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 		GLContext::checkErrors();
 		glViewport(0, 0, lastsize.x, lastsize.y);
 		imageProcessor.processImage(image_data, size);
 		GLContext::checkErrors();
 
-		GLContext::checkErrors();
-		/*if (imageProcessor.blit_texture_back && std::chrono::duration_cast<std::chrono::milliseconds>(timer.now() - lastswap).count() > 260)
-		{
-			shading_mode = !shading_mode;
-			lastswap = timer.now();
-		}*/
 		//--------------------------------------------	POSTPROCESS
-		//glDrawBuffer(GL_COLOR_ATTACHMENT0);
+
 		shader["postprocess"].use();
 
 		glViewport(0, 0, lastsize.x * 2, lastsize.y * 2);
 		glBindFramebuffer(GL_FRAMEBUFFER, 0);
-		//if (!process_png)
-		{
-			glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-		}
+		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
 
 		glBindBuffer(GL_ARRAY_BUFFER, fullscreenVBO_uv);
