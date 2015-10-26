@@ -130,6 +130,7 @@ namespace FW
 			.0f, 1.0f
 		};
 
+		gl = window.getGL();
 
 		glGenBuffers(1, &fullscreenVBO_uv);
 		glBindBuffer(GL_ARRAY_BUFFER, fullscreenVBO_uv);

@@ -34,6 +34,7 @@ namespace FW
 		bool firstUpdate = true;
 		bool remove = false;
 		std::chrono::high_resolution_clock::time_point lastseen; //time point when we last saw this light
+		std::vector<bool> history;
 
 		blinker(const Vec2f pos, const std::chrono::high_resolution_clock& timer, int size, float brightness) : pos(pos), lastseen(timer.now()), size(size), brightness(brightness), ID(blinkerID++) {}
 
@@ -76,7 +77,11 @@ namespace FW
 		void update(const std::chrono::high_resolution_clock& timer)
 		{
 			if (isDead)
+			{
+				history.push_back(false);
 				return;
+			}
+			history.push_back(true);
 
 			if (firstUpdate)
 			{

@@ -173,6 +173,8 @@ void ImageProcessor::processImage(const std::vector<Vec3u8>& imageData, const Ve
 	for (auto& l : sumSizes)
 		l = sum_scale * pow(2.0f, k++);
 
+	float merge_threshold = 1e5f;
+
 	for (auto& p : blinkers)
 		p.isDead = true;
 	//loop over all pixels to find lights
@@ -203,6 +205,7 @@ void ImageProcessor::processImage(const std::vector<Vec3u8>& imageData, const Ve
 
 			//iterate over pairs of squares, getting the average brightness ratio of inner vs outer, and selecting the size with highest average brightness difference
 			float max_diff = lightsearch_threshold;
+			float max_inner = 0;
 			int max_idx = 0;
 			bool found = false;
 			for (int k = 0; k < sum_count - 1; ++k)
@@ -223,6 +226,7 @@ void ImageProcessor::processImage(const std::vector<Vec3u8>& imageData, const Ve
 					found = true;
 					max_diff = cur_diff;
 					max_idx = k;
+					max_inner = inner_average;
 				}
 			}
 
@@ -241,7 +245,7 @@ void ImageProcessor::processImage(const std::vector<Vec3u8>& imageData, const Ve
 			float mincost = light_min_distance;
 			for (auto& p : blinkers){
 				auto cost = (pos - p.getCurPos(timer)).length() / (p.size + sumSizes[max_idx]);
-				if (cost < mincost)
+				if (cost < mincost && abs((max_inner - p.brightness) < merge_threshold))
 				{
 					found = true;
 					mincost = cost;
@@ -253,13 +257,13 @@ void ImageProcessor::processImage(const std::vector<Vec3u8>& imageData, const Ve
 			//if we detected previously unknown blinker, add it
 			if (!found)
 			{
-				blinkers.push_back(blinker(pos, timer, sumSizes[max_idx], max_diff));
+				blinkers.push_back(blinker(pos, timer, sumSizes[max_idx], max_inner));
 				blinkers[blinkers.size() - 1].ID = blinker::blinkerID++;
 			}
 			else if (found)
 			{
 				//else, update the position of found blinker
-				blinkers[bestIdx].mergePos(pos, sumSizes[max_idx], max_diff);
+				blinkers[bestIdx].mergePos(pos, sumSizes[max_idx], max_inner);
 			}
 		}
 	}
@@ -271,7 +275,7 @@ void ImageProcessor::processImage(const std::vector<Vec3u8>& imageData, const Ve
 		{
 			if (p == q || p.isDead || q.isDead)
 				continue;
-			if ((p.pos - q.pos).length() < (q.size + p.size) * light_min_distance * .5f)
+			if ((p.pos - q.pos).length() < (q.size + p.size) * light_min_distance * .5f && abs((p.brightness - q.brightness) / p.brightness) < merge_threshold)
 			{
 				auto& smaller = p;
 				auto& larger = q;
@@ -287,7 +291,31 @@ void ImageProcessor::processImage(const std::vector<Vec3u8>& imageData, const Ve
 	}
 
 	for (auto& p : blinkers)
+	{
 		p.update(timer);
+		FW::String s = "";
+		for (int i = 0; i < p.history.size(); ++i){
+			bool sign = p.history[i];
+			int len = 1;
+			while (true){
+				if (i >= p.history.size())
+					break;
+
+				if (p.history[i] == sign)
+					len++;
+				else
+					break;
+				i++;
+			}
+			if (!sign)
+				s += " ";
+			else if (len < 6)
+				s += ".";
+			else if (len < 15)
+				s += "-";
+		}
+		renderer->gl->drawLabel(s, p.pos - renderer->projectionoffset, FW::U32(-1));
+	}
 
 	renderer->renderVector(histoPoints, GL_LINES, Mat4f());
 	histoPoints.clear();

@@ -28,6 +28,8 @@ namespace FW
 							Renderer();		// constructor
 		virtual				~Renderer() {}	// destructor
 
+		FW::GLContext* gl;
+
 		ImageProcessor imageProcessor;
 
 		Mat4f				last_transformation;
