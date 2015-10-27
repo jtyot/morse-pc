@@ -5,6 +5,10 @@
 *.png
 *.dat
 *.jpg
+*.exe
+*.psess
+*.diagsession
+*.vspx
 
 # Visual Studio solution user options
 *.suo
