@@ -1,5 +1,4 @@
 #include "ImageProcessor.hpp"
-#include "Renderer.hpp"
 
 using namespace FW;
 using namespace std;
@@ -162,7 +161,7 @@ void ImageProcessor::processImage(const std::vector<Vec3u8>& imageData, const Ve
 	}
 	lastoffset = minOffset;
 	auto offset = -1.0f * Vec2f(minOffset) / Vec2f(size);
-	renderer->projectionoffset = offset;
+	//renderer->projectionoffset = offset;
 
 
 	int sum_count = pointsearch_max;
@@ -293,7 +292,7 @@ void ImageProcessor::processImage(const std::vector<Vec3u8>& imageData, const Ve
 	for (auto& p : blinkers)
 	{
 		p.update(timer);
-		FW::String s = "";
+		std::string s = "";
 		for (int i = 0; i < p.history.size(); ++i){
 			bool sign = p.history[i];
 			int len = 1;
@@ -314,10 +313,10 @@ void ImageProcessor::processImage(const std::vector<Vec3u8>& imageData, const Ve
 			else if (len < 15)
 				s += "-";
 		}
-		renderer->gl->drawLabel(s, p.pos - renderer->projectionoffset, FW::U32(-1));
+		//renderer->gl->drawLabel(s, p.pos - renderer->projectionoffset, FW::U32(-1));
 	}
 
-	renderer->renderVector(histoPoints, GL_LINES, Mat4f());
+	//renderer->renderVector(histoPoints, GL_LINES, Mat4f());
 	histoPoints.clear();
 	//eliminate dead blinkers
 	vector<blinker> new_blinkers;
@@ -380,5 +379,5 @@ void ImageProcessor::processImage(const std::vector<Vec3u8>& imageData, const Ve
 		//}
 	}
 
-	renderer->renderVectorColored(histoPoints, GL_LINES, Mat4f());
+	//renderer->renderVectorColored(histoPoints, GL_LINES, Mat4f());
 }

@@ -1,7 +1,7 @@
 #pragma once
 
-#include <base/Math.hpp>
-#include <base/Random.hpp>
+#include "Math.hpp"
+#include "Random.hpp"
 #include <vector>
 #include <chrono>
 
@@ -133,7 +133,7 @@ namespace FW
 		float				shadowCutOff = .2f;
 		std::vector<float>  sumImage;
 
-		ImageProcessor(Renderer* renderer) : renderer(renderer){ 
+		ImageProcessor(){ 
 			rnd = Random(1234); 
 			for (int i = 0; i < 90; ++i)
 				blinkerColors.push_back(rnd.getVec3f(0, 1));
@@ -155,7 +155,6 @@ namespace FW
 		Vec2i				lastoffset = 0;
 		int					lastdownscalefactor = 0;
 
-		Renderer*			renderer;
 		std::chrono::high_resolution_clock timer;
 	};
 

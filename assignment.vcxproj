@@ -92,7 +92,7 @@
     <ClCompile>
       <Optimization>Disabled</Optimization>
       <WholeProgramOptimization>false</WholeProgramOptimization>
-      <AdditionalIncludeDirectories>src\framework;$(IntDir);%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(IntDir);%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>WIN32;_DEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <MinimalRebuild>false</MinimalRebuild>
       <ExceptionHandling>Sync</ExceptionHandling>
@@ -127,7 +127,7 @@
     <ClCompile>
       <Optimization>Disabled</Optimization>
       <WholeProgramOptimization>false</WholeProgramOptimization>
-      <AdditionalIncludeDirectories>src\framework;$(IntDir);%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(IntDir);%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>WIN32;_DEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <MinimalRebuild>false</MinimalRebuild>
       <ExceptionHandling>Sync</ExceptionHandling>
@@ -160,7 +160,7 @@
       <Optimization>Full</Optimization>
       <FavorSizeOrSpeed>Speed</FavorSizeOrSpeed>
       <WholeProgramOptimization>false</WholeProgramOptimization>
-      <AdditionalIncludeDirectories>src\framework;$(IntDir);%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(IntDir);%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>WIN32;NDEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ExceptionHandling>
       </ExceptionHandling>
@@ -199,7 +199,7 @@
       <Optimization>Full</Optimization>
       <FavorSizeOrSpeed>Speed</FavorSizeOrSpeed>
       <WholeProgramOptimization>false</WholeProgramOptimization>
-      <AdditionalIncludeDirectories>src\framework;$(IntDir);%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(IntDir);%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>WIN32;NDEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ExceptionHandling>
       </ExceptionHandling>
@@ -230,31 +230,15 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ProjectReference Include="framework.vcxproj">
-      <Project>{8e0b71bd-6f14-4f0c-ac34-45985043856f}</Project>
-    </ProjectReference>
-  </ItemGroup>
-  <ItemGroup>
-    <ClInclude Include="src\base\App.hpp" />
-    <ClInclude Include="src\base\Framebuffer.hpp" />
     <ClInclude Include="src\base\ImageProcessor.hpp" />
-    <ClInclude Include="src\base\Renderer.hpp" />
-    <ClInclude Include="src\base\Shader.hpp" />
+    <ClInclude Include="src\base\Math.hpp" />
+    <ClInclude Include="src\base\Random.hpp" />
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="src\base\App.cpp" />
-    <ClCompile Include="src\base\Framebuffer.cpp" />
     <ClCompile Include="src\base\ImageProcessor.cpp" />
-    <ClCompile Include="src\base\Renderer.cpp" />
-    <ClCompile Include="src\base\Shader.cpp" />
-  </ItemGroup>
-  <ItemGroup>
-    <None Include="shaders\dot.frag" />
-    <None Include="shaders\dot.vert" />
-    <None Include="shaders\dot_color.frag" />
-    <None Include="shaders\dot_color.vert" />
-    <None Include="shaders\postprocess.frag" />
-    <None Include="shaders\postprocess.vert" />
+    <ClCompile Include="src\base\Main.cpp" />
+    <ClCompile Include="src\base\Math.cpp" />
+    <ClCompile Include="src\base\Random.cpp" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
 </Project>

@@ -122,59 +122,6 @@ typedef __w64 U32           UPTR;
 
 //------------------------------------------------------------------------
 
-#if !FW_CUDA
-
-class String;
-
-// Common functionality.
-
-void*           malloc          (size_t size);
-void            free            (void* ptr);
-void*           realloc         (void* ptr, size_t size);
-
-void            printf          (const char* fmt, ...);
-String          sprintf         (const char* fmt, ...);
-
-// Error handling.
-
-void            setError        (const char* fmt, ...);
-String          clearError      (void);
-bool            restoreError    (const String& old);
-bool            hasError        (void);
-const String&   getError        (void);
-
-void            fail            (const char* fmt, ...);
-void            failWin32Error  (const char* funcName);
-void            failIfError     (void);
-
-// Re-entrancy. Called internally by Main and Window.
-
-int             incNestingLevel (int delta);
-bool            setDiscardEvents(bool discard);
-bool            getDiscardEvents(void);
-
-// Logging.
-
-void            pushLogFile     (const String& name, bool append = true);
-void            popLogFile      (void);
-bool            hasLogFile      (void);
-
-// Memory profiling.
-
-size_t          getMemoryUsed   (void);
-void            pushMemOwner    (const char* id);
-void            popMemOwner     (void);
-void            printMemStats   (void);
-
-// Performance profiling.
-
-void            profileStart    (void);
-void            profilePush     (const char* id);
-void            profilePop      (void);
-void            profileEnd      (bool printResults = true);
-
-#endif
-
 //------------------------------------------------------------------------
 // min(), max(), clamp().
 
@@ -220,15 +167,5 @@ FW_SPECIALIZE_MINMAX(, F64, ::fmin(a, b), ::fmax(a, b))
 // new, delete.
 }
 
-#ifndef FW_DO_NOT_OVERRIDE_NEW_DELETE
-#if !FW_CUDA
-
-inline void*    operator new        (size_t size)       { return FW::malloc(size); }
-inline void*    operator new[]      (size_t size)       { return FW::malloc(size); }
-inline void     operator delete     (void* ptr)         { return FW::free(ptr); }
-inline void     operator delete[]   (void* ptr)         { return FW::free(ptr); }
-
-#endif
-#endif // FW_DO_NOT_OVERRIDE_NEW_DELETE
 
 //------------------------------------------------------------------------

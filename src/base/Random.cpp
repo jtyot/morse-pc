@@ -25,8 +25,7 @@
  *  SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include "base/Random.hpp"
-#include "base/DLLImports.hpp"
+#include "Random.hpp"
 
 using namespace FW;
 
@@ -97,10 +96,6 @@ public:
 
 void Random::reset(void)
 {
-    LARGE_INTEGER ticks;
-    if (!QueryPerformanceCounter(&ticks))
-        failWin32Error("QueryPerformanceCounter");
-    reset(ticks.LowPart);
 }
 
 //------------------------------------------------------------------------

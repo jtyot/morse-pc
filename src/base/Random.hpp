@@ -26,14 +26,14 @@
  */
 
 #pragma once
-#include "base/Math.hpp"
-#include "io/Stream.hpp"
+#include "Math.hpp"
+//#include "io/Stream.hpp"
 
 namespace FW
 {
 //------------------------------------------------------------------------
 
-class Random : public InputStream
+class Random
 {
 public:
                     Random          (void)                      { initImpl(); reset(); }

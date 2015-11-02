@@ -10,57 +10,28 @@
     </Filter>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="src\base\App.hpp">
-      <Filter>Source Files</Filter>
-    </ClInclude>
-    <ClInclude Include="src\base\Framebuffer.hpp">
-      <Filter>Source Files</Filter>
-    </ClInclude>
     <ClInclude Include="src\base\ImageProcessor.hpp">
       <Filter>Source Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\base\Renderer.hpp">
+    <ClInclude Include="src\base\Math.hpp">
       <Filter>Source Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\base\Shader.hpp">
+    <ClInclude Include="src\base\Random.hpp">
       <Filter>Source Files</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="src\base\App.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="src\base\Framebuffer.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="src\base\ImageProcessor.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\base\Renderer.cpp">
+    <ClCompile Include="src\base\Math.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\base\Shader.cpp">
+    <ClCompile Include="src\base\Random.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-  </ItemGroup>
-  <ItemGroup>
-    <None Include="shaders\dot.frag">
-      <Filter>Shaders</Filter>
-    </None>
-    <None Include="shaders\dot.vert">
-      <Filter>Shaders</Filter>
-    </None>
-    <None Include="shaders\dot_color.frag">
-      <Filter>Shaders</Filter>
-    </None>
-    <None Include="shaders\dot_color.vert">
-      <Filter>Shaders</Filter>
-    </None>
-    <None Include="shaders\postprocess.frag">
-      <Filter>Shaders</Filter>
-    </None>
-    <None Include="shaders\postprocess.vert">
-      <Filter>Shaders</Filter>
-    </None>
+    <ClCompile Include="src\base\Main.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
 </Project>
