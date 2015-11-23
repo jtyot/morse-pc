@@ -1,0 +1,23 @@
+import java.util.List;
+
+public class JavaImageProcessor {
+
+	public List<Blinker> previousBlinkers;
+	public class Blinker
+	{
+		int x, y, ID, brightness;
+		public Blinker(int x, int y, int ID, int brightness)
+		{
+			this.x = x;
+			this.y = y;
+			this.ID = ID;
+			this.brightness = brightness;
+		}
+	}
+
+	
+	public void ProcessLights(int[] lightsList)
+	{
+		
+	}
+}

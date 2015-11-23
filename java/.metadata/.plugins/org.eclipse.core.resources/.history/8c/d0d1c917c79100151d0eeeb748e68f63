@@ -1,0 +1,10 @@
+
+
+
+public class JavaImageProcessor {
+	
+	public void ProcessLights(int[] lightsList)
+	{
+		
+	}
+}

@@ -1,0 +1,103 @@
+import java.util.ArrayList;
+
+public class JavaImageProcessor {
+
+	public ArrayList<Blinker> blinkers;
+	public double light_min_distance;
+	public double light_merge_threshold;
+	public int lastID = 0;
+	
+	public class Blinker // class that contains information about a blinker object
+	{
+		double x, y, brightness, size, mass;
+		int ID;
+		
+		public Blinker(DetectedLight light, int ID)
+		{
+			this.x = light.x;
+			this.y = light.y;
+			this.brightness = light.brightness;
+			this.size = light.size;
+			this.ID = ID;
+		}
+		
+		public double mergeValue(double val1, double val2, double mass1, double mass2) // get weighted average of two values
+		{
+			return (val1*mass1 + val2 * mass2) / (mass1+mass2);
+		}
+		
+		public void merge(DetectedLight light) // merge newly detected light and previously seen blinker
+		{
+			x = mergeValue(light.x, x, 1.0, mass);
+			y = mergeValue(light.y, y, 1.0, mass);
+			brightness = mergeValue(light.brightness, brightness, 1.0, mass);
+			mass += 1.0;
+		}
+		
+		public void merge(Blinker other) // merge two blinkers
+		{
+			x = mergeValue(other.x, x, other.mass, mass);
+			y = mergeValue(other.y, y, other.mass, mass);
+			brightness = mergeValue(other.brightness, brightness, other.mass, mass);
+			mass += other.mass;
+		}
+	}
+	
+	public class DetectedLight // class that describes one pixel on the image that contains a light
+	{
+		int x, y, brightness, size;
+		public DetectedLight(int x, int y, int brightness, int size)
+		{
+			this.x = x;
+			this.y = y;
+			this.brightness = brightness;
+			this.size = size;
+		}
+		
+		public double getDistance(Blinker other)
+		{
+			double xdist = x-other.x;
+			double ydist = y-other.y;
+			return Math.sqrt(xdist*xdist + ydist*ydist);
+		}
+	}
+
+	
+	public void ProcessLights(int[] lightsList)
+	{
+		for(int i = 0; i < lightsList.length / 4; ++i)
+		{
+			DetectedLight curDetectedLight = new DetectedLight(lightsList[i*4+0], lightsList[i*4+1], lightsList[i*4+2], lightsList[i*4+3]);
+
+			boolean found = false;
+			boolean anyInRange = false;
+			int bestIdx = 0;
+			int k = 0;
+			double mincost = light_min_distance;
+			
+			//loop over previously seen blinkers, set position and last seen time if close enough
+			for (Blinker p : blinkers){
+				double length = curDetectedLight.getDistance(p);
+				double cost = length / (p.size + curDetectedLight.size);
+				if (cost < mincost && Math.abs(curDetectedLight.brightness - p.brightness) < light_merge_threshold)
+				{
+					found = true;
+					mincost = cost;
+					bestIdx = k;
+				}
+				++k;
+			}
+
+			//if we detected previously unknown blinker, add it
+			if (!found)
+			{
+				blinkers.add(new Blinker(curDetectedLight, lastID++));
+			}
+			else if (found)
+			{
+				//else, update the position of found blinker
+				blinkers.get(bestIdx).merge(curDetectedLight);
+			}
+		}
+	}
+}

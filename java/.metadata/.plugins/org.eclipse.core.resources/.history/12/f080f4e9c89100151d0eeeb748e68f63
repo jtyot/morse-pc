@@ -1,0 +1,64 @@
+import java.util.List;
+
+public class JavaImageProcessor {
+
+	public List<Blinker> previousBlinkers;
+	public float light_min_distance;
+	public class Blinker
+	{
+		int x, y, ID, brightness;
+		public Blinker(int x, int y, int ID, int brightness)
+		{
+			this.x = x;
+			this.y = y;
+			this.ID = ID;
+			this.brightness = brightness;
+		}
+		
+		public float getDistance(Blinker other)
+		{
+			float xdist = x-other.x;
+			float ydist = y-other.y;
+			float dist = Math.sqrt(xdist*xdist + ydist*ydist);
+		}
+	}
+
+	
+	public void ProcessLights(int[] lightsList)
+	{
+		for(int i = 0; i < lightsList.length / 4; ++i)
+		{
+			Blinker curBlinker = new Blinker(lightsList[i*4+0], lightsList[i*4+1], lightsList[i*4+2], lightsList[i*4+3]);
+
+			//loop over previously seen blinkers, set position and last seen time if close enough
+			boolean found = false;
+			boolean anyInRange = false;
+			int bestIdx = 0;
+			int k = 0;
+			float mincost = light_min_distance;
+			for (Blinker p : previousBlinkers){
+				float lenght = Math.sqrt(a)
+				float cost = (pos - p.getCurPos(timer)).length() / (p.size + sumSizes[max_idx]);
+				if (cost < mincost && abs((max_inner - p.brightness) < merge_threshold))
+				{
+					found = true;
+					mincost = cost;
+					bestIdx = k;
+				}
+				++k;
+			}
+
+			//if we detected previously unknown blinker, add it
+			if (!found)
+			{
+				blinkers.push_back(blinker(pos, timer, sumSizes[max_idx], max_inner));
+				blinkers[blinkers.size() - 1].ID = blinker::blinkerID++;
+			}
+			else if (found)
+			{
+				//else, update the position of found blinker
+				blinkers[bestIdx].mergePos(pos, sumSizes[max_idx], max_inner);
+			}
+		}
+	}
+}

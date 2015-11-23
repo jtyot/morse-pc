@@ -1,0 +1,14 @@
+
+
+
+public class JavaImageProcessor {
+
+	public class Blinker
+	{
+		int x, y, ID, brightness;
+	}
+	public void ProcessLights(int[] lightsList)
+	{
+		
+	}
+}
